@@ -126,7 +126,7 @@ Inside summation bounds you may use:
 
 ```
 i < j
-i <= j
+i \le j
 ```
 
 These restrict loop expansion and are evaluated during sum expansion.
