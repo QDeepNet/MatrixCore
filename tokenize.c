@@ -121,20 +121,16 @@ uint16_t Special_TwoChar(const uint8_t c1, const uint8_t c2) {
 }
 
 void tokenize_identifier(token_t *token, token_parser_t *parser) {
-    uint64_t pos = 0;
     parser_data_t data;
     tokenize_parser_pos_cast(&data, parser);
 
-    if (!IdentifierStart(data.data[pos])) return;
-
-    for (; pos < data.size; ++pos)
-        if (!IdentifierChar(data.data[pos])) break;
+    if (!IdentifierStart(data.data[0])) return;
 
     token->type = TokenType_Identifier;
 
-    token_set_data(token, data.data, pos);
+    token_set_data(token, data.data, 1);
     token_set_line(token, parser->line);
-    tokenize_parser_update_pos(parser, pos);
+    tokenize_parser_update_pos(parser, 1);
 }
 void tokenize_integer(token_t *token, token_parser_t *parser)  {
     uint64_t pos = 0;
