@@ -12,7 +12,7 @@
 
 
 #define TokenType_None         0x00
-#define TokenType_Command     0x01
+#define TokenType_Command      0x01
 #define TokenType_Identifier   0x02
 #define TokenType_Int          0x03
 #define TokenType_Special      0x04
