@@ -141,13 +141,8 @@ void tokenize_integer(token_t *token, token_parser_t *parser)  {
 
     uint8_t c;
     uint16_t sub_type = IntType_DEC;
-    uint64_t zero_end = 0;
 
-    do GetChar while (c == '_' || c == '0');
-    zero_end = pos - 1;
-
-
-    while (CharInt(c)) GetChar
+    do GetChar while (CharInt(c));
 
     if (c == '.') {
         do GetChar while (CharInt(c));
@@ -157,7 +152,7 @@ void tokenize_integer(token_t *token, token_parser_t *parser)  {
     token->type = TokenType_Int;
     token->sub_type = sub_type;
 
-    token_set_data(token, data.data + zero_end, pos - 1 - zero_end);
+    token_set_data(token, data.data, pos - 1);
     token_set_line(token, parser->line);
     tokenize_parser_update_pos(parser, pos);
     return;
