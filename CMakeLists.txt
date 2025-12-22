@@ -3,4 +3,9 @@ project(MatrixCore C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(MatrixCore main.c)
+add_executable(MatrixCore main.c
+        tokenize.h
+        tokenize.c
+        parser.h
+        parser-utils.h
+        error.h)
