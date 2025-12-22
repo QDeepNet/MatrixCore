@@ -12,7 +12,7 @@
 
 
 #define TokenType_None         0x00
-#define TokenType_KeyWords     0x01
+#define TokenType_Command     0x01
 #define TokenType_Identifier   0x02
 #define TokenType_Int          0x03
 #define TokenType_Special      0x04
@@ -23,48 +23,38 @@
 #define IntType_FLOAT           0x01
 
 
-// Not Defined Keyword
-#define KeyWord_None            0x00
-
-#define KeyWord_Sum             0x01
+#define Command_SUM             0x01
+#define Command_LESS_EQ         0x02
+#define Command_GREATER_EQ      0x03
 
 
 // Special Chars
 #define Special_None        0x00
 
 // Special Chars OP
-#define Special_MOD         0x11
-#define Special_MUL         0x12
-#define Special_ADD         0x13
-#define Special_SUB         0x14
-#define Special_DIV         0x15
-
-// Special Position
-#define Special_UP          0x21
-#define Special_LOW         0x22
+#define Special_MOD         0x11 // %
+#define Special_MUL         0x12 // *
+#define Special_ADD         0x13 // +
+#define Special_SUB         0x14 // -
+#define Special_DIV         0x15 // /
 
 // Special Chars Brackets
-#define Special_LSB         0x31
-#define Special_RSB         0x32
-#define Special_LSQB        0x33
-#define Special_RSQB        0x34
-#define Special_LCB         0x35
-#define Special_RCB         0x36
+#define Special_LSB         0x31 // (
+#define Special_RSB         0x32 // )
+#define Special_LSQB        0x33 // [
+#define Special_RSQB        0x34 // ]
+#define Special_LCB         0x35 // {
+#define Special_RCB         0x36 // }
 
 // Special Chars Compare
-#define Special_LESS        0x41
-#define Special_GREATER     0x42
-#define Special_EQ_LESS     0x43
-#define Special_EQ_GREATER  0x44
+#define Special_LESS        0x41 // <
+#define Special_GREATER     0x42 // >
 
-
-// Special Chars Comments
-#define Special_COMMA       0x01
-#define Special_DOT         0x02
-#define Special_COLON       0x03
-#define Special_SEMI        0x04
-#define Special_EQ          0x05
-#define Special_NOT         0x06
+// Delimiters
+#define Special_COMMA       0x01 // ,
+#define Special_CARET       0x02 // ^
+#define Special_UNDERSCORE  0x03 // _
+#define Special_EQ          0x04 // =
 
 typedef struct {
     uint16_t type;

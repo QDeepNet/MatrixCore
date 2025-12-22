@@ -20,7 +20,7 @@ typedef struct {
 
 #define GetChar {if (pos == data.size) goto err; c = data.data[pos++];}
 #define tokenize_keyword_cmp(_data, value)      \
-if (memcmp(data.data, (_data), kw_size) == 0) { \
+if (memcmp(data.data + 1, (_data), kw_size) == 0) { \
     type = (value);                             \
     goto end;                                   \
 }
@@ -53,22 +53,14 @@ uint16_t Special_OneChar(const uint8_t c1, parser_nest_t *nest, error_t *error) 
             return Special_COMMA;
         case '-':
             return Special_SUB;
-        case '.':
-            return Special_DOT;
         case '/':
             return Special_DIV;
-        case ':':
-            return Special_COLON;
-        case ';':
-            return Special_SEMI;
         case '<':
             return Special_LESS;
         case '=':
             return Special_EQ;
         case '>':
             return Special_GREATER;
-        case '!':
-            return Special_NOT;
         case '[':
             if (nest->pos == MaxBracketNesting) goto err_max;
             nest->buf[nest->pos++] = Special_LSQB;
@@ -78,9 +70,9 @@ uint16_t Special_OneChar(const uint8_t c1, parser_nest_t *nest, error_t *error) 
             if (nest->buf[--nest->pos] != Special_LSQB) goto err;
             return Special_RSQB;
         case '^':
-            return Special_UP;
+            return Special_CARET;
         case '_':
-            return Special_LOW;
+            return Special_UNDERSCORE;
         case '{':
             if (nest->pos == MaxBracketNesting) goto err_max;
             nest->buf[nest->pos++] = Special_LCB;
@@ -103,21 +95,6 @@ uint16_t Special_OneChar(const uint8_t c1, parser_nest_t *nest, error_t *error) 
     error_set_msg(error, "Unmatched closing bracket found.");
     return Special_None;
 
-}
-uint16_t Special_TwoChar(const uint8_t c1, const uint8_t c2) {
-    switch (c1) {
-        case '<':
-            if (c2 == '=') return Special_EQ_LESS;
-            break;
-        case '=':
-            break;
-        case '>':
-            if (c2 == '=') return Special_EQ_GREATER;
-            break;
-        default:
-            break;
-    }
-    return Special_None;
 }
 
 void tokenize_identifier(token_t *token, token_parser_t *parser) {
@@ -167,56 +144,49 @@ void tokenize_keyword(token_t *token, token_parser_t *parser) {
     parser_data_t data;
     tokenize_parser_pos_cast(&data, parser);
 
-    for (;kw_size < data.size; kw_size++)
-        if (!KeyWordChar(data.data[kw_size])) break;
+    if (data.data[0] != '\\') return;
+
+
+    for (;kw_size + 1 < data.size; kw_size++)
+        if (!KeyWordChar(data.data[kw_size + 1])) break;
 
     uint16_t type;
-    if (kw_size == 4) {
-        // Keywords length 4
-        tokenize_keyword_cmp("\\sum", KeyWord_Sum)
+    if (kw_size == 2) {
+        // Keywords length 3
+        tokenize_keyword_cmp("le", Command_LESS_EQ)
+        tokenize_keyword_cmp("ge", Command_GREATER_EQ)
+    } else if (kw_size == 3) {
+        // Keywords length 3
+        tokenize_keyword_cmp("sum", Command_SUM)
     }
     return;
 
     end:
-    token->type = TokenType_KeyWords;
+    token->type = TokenType_Command;
     token->sub_type = type;
 
-    token_set_data(token, data.data, kw_size);
+    token_set_data(token, data.data, kw_size + 1);
     token_set_line(token, parser->line);
-    tokenize_parser_update_pos(parser, kw_size);
+    tokenize_parser_update_pos(parser, kw_size + 1);
 }
 void tokenize_special(token_t *token, token_parser_t *parser) {
-    uint64_t pos = 0;
     parser_data_t data;
     tokenize_parser_pos_cast(&data, parser);
 
-    uint16_t res1 = 0, res2 = 0;
     uint16_t res = Special_None;
-    uint64_t size = 0;
 
-    if (pos == data.size) goto end;
-    const uint8_t c1 = data.data[pos++];
-    res1 = Special_OneChar(c1, &parser->nest, &parser->error);
+    if (0 == data.size) goto end;
+    const uint8_t c1 = data.data[0];
+    res = Special_OneChar(c1, &parser->nest, &parser->error);
 
-    if (pos == data.size || parser->error.present) goto end;
-    const uint8_t c2 = data.data[pos];
-    res2 = Special_TwoChar(c1, c2);
 
     end:
-
-    if (res2 != Special_None) {
-        res = res2;
-        size = 2;
-    } else if (res1 != Special_None) {
-        res = res1;
-        size = 1;
-    }
     if (res != Special_None) {
         token->type = TokenType_Special;
         token->sub_type = res;
 
         token_set_line(token, parser->line);
-        tokenize_parser_update_pos(parser, size);
+        tokenize_parser_update_pos(parser, 1);
     }
     if (parser->error.present) error_set_line(&parser->error, parser->line);
 }
