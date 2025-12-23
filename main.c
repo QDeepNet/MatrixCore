@@ -18,32 +18,26 @@ uint64_t printing_pos;
 static void print_node_list__(const node_list_t *list, const uint64_t size);
 
 static void print_token__(const token_t *token, const uint64_t size) {
-    printf("TOKEN: ");
     if (token == NULL) {
         printf("NULL\n");
         return;
     }
-    printf("\n");
 
-
-    PRINT_PREF PRINT_NEXT(token->type != TokenType_None)
-
-    printf("TYPE: ");
     switch (token->type) {
         case TokenType_None:
             printf("NONE\n");
             return;
         case TokenType_Command:
-            printf("COMMAND\n");
+            printf("COMMAND : \n");
             break;
         case TokenType_Identifier:
-            printf("IDENTIFIER\n");
+            printf("IDENTIFIER : \n");
             break;
         case TokenType_Number:
-            printf("NUMBER\n");
+            printf("NUMBER : \n");
             break;
         case TokenType_Special:
-            printf("SPECIAL\n");
+            printf("SPECIAL : \n");
             break;
         default: ;
     }
@@ -129,80 +123,44 @@ static void print_token_list__(const token_list_t *list, const uint64_t size) {
 }
 
 static void print_node__(const node_t *node, const uint64_t size) {
-    printf("NODE: ");
     if (node == NULL) {
         printf("NULL\n");
         return;
     }
-    printf("\n");
-
-
-    PRINT_PREF PRINT_NEXT(node->type != MainType_None)
-    printf("TYPE: ");
 
     switch (node->type) {
-        case MainType_None:
+        case AST_Type_Number:
+            printf("Number : \n");
+            break;
+        case AST_Type_GetIdent:
+            printf("GetIdent : \n");
+            break;
+        case AST_Type_SetIdent:
+            printf("SetIdent : \n");
+            break;
+        case AST_Type_QBit:
+            printf("QBit : \n");
+            break;
+        case AST_Type_Power:
+            printf("Power : \n");
+            break;
+        case AST_Type_Sum:
+            printf("Sum : \n");
+            break;
+        case AST_Type_Implicit:
+            printf("Implicit : \n");
+            break;
+        case AST_Type_Multiplication:
+            printf("Multiplication : \n");
+            break;
+        case AST_Type_Addition:
+            printf("Addition : \n");
+            break;
+        case AST_Type_Compare:
+            printf("Compare : \n");
+            break;
+        default:
             printf("None\n");
-            return;
-        case MainType_Value:
-            printf("Value\n");
-            PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
-            printf("SUB TYPE: ");
-            switch (node->sub_type) {
-                case ValueType_Number:
-                    printf("Number\n");
-                    break;
-                case ValueType_GetIdent:
-                    printf("GetIdent\n");
-                    break;
-                case ValueType_SetIdent:
-                    printf("SetIdent\n");
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case MainType_Expr:
-            printf("Expr\n");
-            PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
-            printf("SUB TYPE: ");
-
-            switch (node->sub_type) {
-                case ExprType_QBit:
-                    printf("QBit\n");
-                    break;
-                case ExprType_Power:
-                    printf("Power\n");
-                    break;
-                case ExprType_Sum:
-                    printf("Sum\n");
-                    break;
-                case ExprType_Implicit:
-                    printf("Implicit\n");
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case MainType_Oper:
-            printf("Oper\n");
-            PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
-            printf("SUB TYPE: ");
-            switch (node->sub_type) {
-                case OperType_Multiplication:
-                    printf("Multiplication\n");
-                    break;
-                case OperType_Addition:
-                    printf("Addition\n");
-                    break;
-                case OperType_Compare:
-                    printf("Compare\n");
-                    break;
-                default:
-                    break;
-            }
-            break;
-        default: ;
     }
 
     if (node->tokens.len > 0) {
@@ -241,7 +199,7 @@ static void print_node(const node_t *node) {
 
 int main(void) {
     parser_t parser = {};
-    char *data = "\\sum_{i = 0}^N 2^iaq_i + \\sum_{i = 0}^N \\sum_{i < j}^N 2^i2^jq_iq_j";
+    char *data = "2 + 4 * 12 + 2";
     parser.data = (uint8_t *)data;
     parser.size = strlen(data);
 

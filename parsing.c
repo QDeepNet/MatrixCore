@@ -72,8 +72,7 @@ uint8_t numb_expr(node_parser_t *parser, node_t *expr) {
     if (token->type != TokenType_Number) return SN_Nothing;
     parser->pos++;
 
-    expr->type = MainType_Value;
-    expr->sub_type = ValueType_Number;
+    expr->type = AST_Type_Number;
     token_plist_addend(&expr->tokens, token);
 
     return SN_Success;
@@ -85,8 +84,7 @@ uint8_t geti_expr(node_parser_t *parser, node_t *expr) {
     if (token->type != TokenType_Identifier) return SN_Nothing;
     parser->pos++;
 
-    expr->type = MainType_Value;
-    expr->sub_type = ValueType_GetIdent;
+    expr->type = AST_Type_GetIdent;
     token_plist_addend(&expr->tokens, token);
 
     return SN_Success;
@@ -98,15 +96,15 @@ uint8_t seti_expr(node_parser_t *parser, node_t *expr) {
     if (token->type != TokenType_Identifier) return SN_Nothing;
     parser->pos++;
 
-    expr->type = MainType_Value;
-    expr->sub_type = ValueType_SetIdent;
+    expr->type = AST_Type_SetIdent;
     token_plist_addend(&expr->tokens, token);
 
     return SN_Success;
 }
 
-uint8_t math_oper(node_parser_t *parser, node_t *expr);
-uint8_t rule_oper(node_parser_t *parser, node_t *expr);
+uint8_t math_expr(node_parser_t *parser, node_t *expr);
+uint8_t rule_expr(node_parser_t *parser, node_t *expr);
+uint8_t impl_expr(node_parser_t *parser, node_t *expr);
 
 uint8_t nest_expr(node_parser_t *parser, node_t *expr, const uint32_t type) {
     analyze_start
@@ -116,7 +114,7 @@ uint8_t nest_expr(node_parser_t *parser, node_t *expr, const uint32_t type) {
     if (token->type != TokenType_Special || token->sub_type != type) goto end;
     parser->pos++;
 
-    check_call(math_oper(parser, expr)) goto err;
+    check_call(math_expr(parser, expr)) goto err;
 
     parser_end goto err;
     parser_get;
@@ -149,8 +147,7 @@ uint8_t qbit_expr(node_parser_t *parser, node_t *expr) {
     expr_cast
     check_call(atom_expr(parser, expr_next)) goto err;
 
-    expr->type = MainType_Expr;
-    expr->sub_type = ExprType_QBit;
+    expr->type = AST_Type_QBit;
     result = SN_Success;
 
     analyze_end
@@ -179,12 +176,11 @@ uint8_t powr_expr(node_parser_t *parser, node_t *expr) {
     expr_add
     check_call(atom_expr(parser, expr_next)) goto err;
 
-    expr->type = MainType_Expr;
-    expr->sub_type = ExprType_Power;
+    expr->type = AST_Type_Power;
 
     analyze_end
 }
-uint8_t sum_expr(node_parser_t *parser, node_t *expr) {
+uint8_t sum_expr (node_parser_t *parser, node_t *expr) {
     analyze_start
 
     parser_end goto end;
@@ -204,7 +200,7 @@ uint8_t sum_expr(node_parser_t *parser, node_t *expr) {
     parser->pos++;
 
     expr_cast
-    check_call(rule_oper(parser, expr_next)) goto err;
+    check_call(rule_expr(parser, expr_next)) goto err;
 
     parser_end goto err;
     parser_get;
@@ -219,8 +215,10 @@ uint8_t sum_expr(node_parser_t *parser, node_t *expr) {
     expr_add
     check_call(atom_expr(parser, expr_next)) goto err;
 
-    expr->type = MainType_Expr;
-    expr->sub_type = ExprType_Sum;
+    expr_add
+    check_call(impl_expr(parser, expr_next)) goto err;
+
+    expr->type = AST_Type_Sum;
     result = SN_Success;
 
     analyze_end
@@ -242,15 +240,16 @@ uint8_t impl_expr(node_parser_t *parser, node_t *expr) {
 
     expr_rem
 
-    expr->type = MainType_Expr;
-    expr->sub_type = ExprType_Implicit;
+    if (expr->nodes.len == 0) goto end;
+
+    expr->type = AST_Type_Implicit;
     result = SN_Success;
 
     analyze_end
 }
 
 
-int8_t oper_priority(const uint16_t sub_type) {
+int8_t expr_priority(const uint16_t sub_type) {
     switch (sub_type) {
         case Special_MUL:
         case Special_DIV:
@@ -263,7 +262,7 @@ int8_t oper_priority(const uint16_t sub_type) {
             return -1;
     }
 }
-uint8_t math_oper(node_parser_t *parser, node_t *expr) {
+uint8_t math_expr(node_parser_t *parser, node_t *expr) {
     analyze_start
 
     uint8_t stack[16];
@@ -276,7 +275,7 @@ uint8_t math_oper(node_parser_t *parser, node_t *expr) {
     while (parser->pos < parser->tokens.len) {
         parser_get;
 
-        if (token->type != TokenType_Special || (priority = oper_priority(token->sub_type)) == -1) break;
+        if (token->type != TokenType_Special || (priority = expr_priority(token->sub_type)) == -1) break;
         parser->pos++;
 
         node_t *prev = expr_next;
@@ -289,15 +288,14 @@ uint8_t math_oper(node_parser_t *parser, node_t *expr) {
             node_clear(prev);
             node_plist_addend(&prev->nodes, expr_next);
 
-            prev->sub_type = OperType_Multiplication + priority;
-            prev->type = MainType_Oper;
+            prev->type = AST_Type_Multiplication + priority;
 
             ++stack_pos;
             node[stack_pos] = prev;
             stack[stack_pos] = priority;
         }
 
-        token_plist_addend(&expr->tokens, token);
+        token_plist_addend(&node[stack_pos]->tokens, token);
         expr_next = node_list_append(&parser->nodes);
         node_plist_addend(&node[stack_pos]->nodes, expr_next);
 
@@ -307,7 +305,7 @@ uint8_t math_oper(node_parser_t *parser, node_t *expr) {
     result = SN_Success;
     analyze_end
 }
-uint8_t rule_oper(node_parser_t *parser, node_t *expr) {
+uint8_t rule_expr(node_parser_t *parser, node_t *expr) {
     analyze_start
 
     expr_cast
@@ -326,10 +324,9 @@ uint8_t rule_oper(node_parser_t *parser, node_t *expr) {
     token_plist_addend(&expr->tokens, token);
 
     expr_add
-    check_call(math_oper(parser, expr_next)) goto err;
+    check_call(math_expr(parser, expr_next)) goto err;
 
-    expr->sub_type = OperType_Compare;
-    expr->type = MainType_Oper;
+    expr->type = AST_Type_Compare;
     result = SN_Success;
 
     analyze_end
@@ -347,7 +344,7 @@ void parser_parse_ast(parser_t *parser) {
     error_init(&ast_parser.error);
 
     node_t *expr = node_list_append(&parser->nodes);
-    if (math_oper(&ast_parser, expr) != SN_Success) {
+    if (math_expr(&ast_parser, expr) != SN_Success) {
         node_list_clear(&parser->nodes);
         error_set(&parser->error, &ast_parser.error);
     }

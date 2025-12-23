@@ -4,23 +4,17 @@
 #include "token.h"
 
 
-#define MainType_None           0x00
-#define MainType_Value          0x01
-#define MainType_Expr           0x02
-#define MainType_Oper           0x03
-
-#define ValueType_Number        0x01
-#define ValueType_GetIdent      0x02
-#define ValueType_SetIdent      0x03
-
-#define ExprType_QBit           0x01
-#define ExprType_Power          0x02
-#define ExprType_Sum            0x03
-#define ExprType_Implicit       0x04
-
-#define OperType_Multiplication 0x01
-#define OperType_Addition       0x02
-#define OperType_Compare        0x03
+#define AST_Type_None           0x00
+#define AST_Type_Number         0x01
+#define AST_Type_GetIdent       0x02
+#define AST_Type_SetIdent       0x03
+#define AST_Type_QBit           0x04
+#define AST_Type_Power          0x05
+#define AST_Type_Sum            0x06
+#define AST_Type_Implicit       0x07
+#define AST_Type_Multiplication 0x08
+#define AST_Type_Addition       0x09
+#define AST_Type_Compare        0x0a
 
 
 typedef struct {
@@ -31,7 +25,6 @@ typedef struct {
 
 typedef struct node_st {
     uint16_t type;
-    uint16_t sub_type;
 
     token_list_t tokens;
     node_list_t nodes;
@@ -48,8 +41,7 @@ static __inline__ void node_plist_set(node_list_t *list, const node_list_t *src)
 static __inline__ node_t *node_init() {
     node_t *node = malloc(sizeof(node_t));
 
-    node->type = MainType_None;
-    node->sub_type = 0;
+    node->type = AST_Type_None;
 
     token_plist_init(&node->tokens);
     node_plist_init(&node->nodes);
@@ -58,8 +50,7 @@ static __inline__ node_t *node_init() {
 }
 static __inline__ void node_clear(node_t *node) {
     if (node == NULL) return;
-    node->type = MainType_None;
-    node->sub_type = 0;
+    node->type = AST_Type_None;
 
     token_plist_clear(&node->tokens);
     node_plist_clear(&node->nodes);
@@ -77,7 +68,6 @@ static __inline__ void node_set(node_t *node, const node_t *src) {
     if (node == NULL) return;
     if (src == NULL) return node_clear(node);
     node->type = src->type;
-    node->sub_type = src->sub_type;
 
     token_plist_set(&node->tokens, &src->tokens);
     node_plist_set(&node->nodes, &src->nodes);
