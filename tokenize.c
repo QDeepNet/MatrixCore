@@ -18,7 +18,6 @@ typedef struct {
 #define KeyWordChar(c) ((c) >= 'a' && (c) <= 'z')
 
 
-#define GetChar {if (pos == data.size) goto end; c = data.data[pos++];}
 #define tokenize_keyword_cmp(_data, value)      \
 if (memcmp(data.data + 1, (_data), kw_size) == 0) { \
     type = (value);                             \
@@ -119,21 +118,32 @@ void tokenize_integer(token_t *token, token_parser_t *parser)  {
     uint8_t c;
     uint16_t sub_type = IntType_DEC;
 
-    do GetChar while (CharInt(c));
-
-    if (c == '.') {
-        sub_type |= IntType_FLOAT;
-        do GetChar while (CharInt(c));
+    while (pos < data.size) {
+        c = data.data[pos++];
+        if (!CharInt(c)) {
+            pos --;
+            break;
+        }
     }
 
-    end:
+    if (pos < data.size && c == '.') {
+        sub_type |= IntType_FLOAT;
+
+        while (pos < data.size) {
+            c = data.data[pos++];
+            if (!CharInt(c)) {
+                pos --;
+                break;
+            }
+        }
+    }
 
     token->type = TokenType_Number;
     token->sub_type = sub_type;
 
-    token_set_data(token, data.data, pos - 1);
+    token_set_data(token, data.data, pos);
     token_set_line(token, parser->line);
-    tokenize_parser_update_pos(parser, pos - 1);
+    tokenize_parser_update_pos(parser, pos);
 }
 void tokenize_keyword(token_t *token, token_parser_t *parser) {
 
