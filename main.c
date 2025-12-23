@@ -148,7 +148,7 @@ static void print_node__(const node_t *node, const uint64_t size) {
             printf("Value\n");
             PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
             printf("SUB TYPE: ");
-            switch (node->type) {
+            switch (node->sub_type) {
                 case ValueType_Number:
                     printf("Number\n");
                     break;
@@ -167,7 +167,7 @@ static void print_node__(const node_t *node, const uint64_t size) {
             PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
             printf("SUB TYPE: ");
 
-            switch (node->type) {
+            switch (node->sub_type) {
                 case ExprType_QBit:
                     printf("QBit\n");
                     break;
@@ -188,7 +188,7 @@ static void print_node__(const node_t *node, const uint64_t size) {
             printf("Oper\n");
             PRINT_PREF PRINT_NEXT(node->tokens.len > 0 || node->nodes.len > 0)
             printf("SUB TYPE: ");
-            switch (node->type) {
+            switch (node->sub_type) {
                 case OperType_Multiplication:
                     printf("Multiplication\n");
                     break;
@@ -241,9 +241,7 @@ static void print_node(const node_t *node) {
 
 int main(void) {
     parser_t parser = {};
-    //\\sum_i^N 2^iaq_i + \\sum_i^N \\sum_{i < j}^N 2^i2^jq_iq_j
-
-    char *data = "1 + 2";
+    char *data = "\\sum_{i = 0}^N 2^iaq_i + \\sum_{i = 0}^N \\sum_{i < j}^N 2^i2^jq_iq_j";
     parser.data = (uint8_t *)data;
     parser.size = strlen(data);
 

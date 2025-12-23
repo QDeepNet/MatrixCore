@@ -68,34 +68,40 @@ typedef struct {
 uint8_t numb_expr(node_parser_t *parser, node_t *expr) {
     parser_end return SN_Nothing;
 
-    const token_t *parser_get;
+    token_t *parser_get;
     if (token->type != TokenType_Number) return SN_Nothing;
     parser->pos++;
 
     expr->type = MainType_Value;
     expr->sub_type = ValueType_Number;
+    token_plist_addend(&expr->tokens, token);
+
     return SN_Success;
 }
 uint8_t geti_expr(node_parser_t *parser, node_t *expr) {
     parser_end return SN_Nothing;
 
-    const token_t *parser_get;
+    token_t *parser_get;
     if (token->type != TokenType_Identifier) return SN_Nothing;
     parser->pos++;
 
     expr->type = MainType_Value;
-    expr->sub_type = ValueType_SetIdent;
+    expr->sub_type = ValueType_GetIdent;
+    token_plist_addend(&expr->tokens, token);
+
     return SN_Success;
 }
 uint8_t seti_expr(node_parser_t *parser, node_t *expr) {
     parser_end return SN_Nothing;
 
-    const token_t *parser_get;
+    token_t *parser_get;
     if (token->type != TokenType_Identifier) return SN_Nothing;
     parser->pos++;
 
     expr->type = MainType_Value;
     expr->sub_type = ValueType_SetIdent;
+    token_plist_addend(&expr->tokens, token);
+
     return SN_Success;
 }
 
@@ -151,12 +157,12 @@ uint8_t qbit_expr(node_parser_t *parser, node_t *expr) {
 }
 uint8_t prim_expr(node_parser_t *parser, node_t *expr) {
     uint8_t result;
-    if ((result = geti_expr(parser, expr)) != SN_Nothing) return result;
+    if ((result = qbit_expr(parser, expr)) != SN_Nothing) return result;
     if ((result = numb_expr(parser, expr)) != SN_Nothing) return result;
     if ((result = nest_expr(parser, expr, Special_LCB)) != SN_Nothing) return result;
     if ((result = nest_expr(parser, expr, Special_LSB)) != SN_Nothing) return result;
     if ((result = nest_expr(parser, expr, Special_LSQB)) != SN_Nothing) return result;
-    return qbit_expr(parser, expr);
+    return geti_expr(parser, expr);
 }
 uint8_t powr_expr(node_parser_t *parser, node_t *expr) {
     analyze_start
@@ -170,6 +176,7 @@ uint8_t powr_expr(node_parser_t *parser, node_t *expr) {
     parser->pos++;
 
     expr_cast
+    expr_add
     check_call(atom_expr(parser, expr_next)) goto err;
 
     expr->type = MainType_Expr;
@@ -229,14 +236,14 @@ uint8_t impl_expr(node_parser_t *parser, node_t *expr) {
 
     expr_cast
     while (1) {
-        check_call(atom_expr(parser, expr_next)) break;
+        check_call(main_expr(parser, expr_next)) break;
         expr_add
     }
 
     expr_rem
 
     expr->type = MainType_Expr;
-    expr->sub_type = ExprType_QBit;
+    expr->sub_type = ExprType_Implicit;
     result = SN_Success;
 
     analyze_end
@@ -307,12 +314,14 @@ uint8_t rule_oper(node_parser_t *parser, node_t *expr) {
     check_call(seti_expr(parser, expr_next)) goto err;
 
 
+    parser_end goto end;
+    parser_get;
     if (
         (token->type != TokenType_Special ||
             (token->sub_type != Special_EQ && token->sub_type != Special_LESS && token->sub_type != Special_GREATER)) &&
         (token->type != TokenType_Command ||
             (token->sub_type != Command_LESS_EQ && token->sub_type != Command_GREATER_EQ))) goto err;
-
+    parser->pos++;
 
     token_plist_addend(&expr->tokens, token);
 

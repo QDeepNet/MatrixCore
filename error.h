@@ -40,14 +40,14 @@ static __inline__ void error_set(error_t *error, const error_t *src) {
     if (error == NULL) return;
     if (src == NULL || src->present == 0) return error_init(error);
 
-    strcpy(error->msg, src->msg);
+    error->msg = strdup(src->msg);
     error->line = src->line;
     error->present = 1;
 }
 static __inline__ void error_set_msg(error_t *error, const char *msg) {
     if (error == NULL) return;
 
-    strcpy(error->msg, msg);
+    error->msg = strdup(msg);
     error->present = 1;
 }
 static __inline__ void error_set_line(error_t *error, const parser_line_t line) {
