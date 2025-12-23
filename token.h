@@ -8,13 +8,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "parser.h"
+#include "parser-utils.h"
 
 
 #define TokenType_None         0x00
 #define TokenType_Command      0x01
 #define TokenType_Identifier   0x02
-#define TokenType_Int          0x03
+#define TokenType_Number       0x03
 #define TokenType_Special      0x04
 
 
@@ -189,6 +189,13 @@ static __inline__ void token_plist_addend(token_list_t *list, token_t *token) {
     const uint64_t len = list->len;
     token_plist_resize(list, len + 1);
     list->tokens[len] = token;
+}
+static __inline__ void token_plist_pop(token_list_t *list) {
+    if (list == NULL) return;
+    const uint64_t len = list->len - 1;
+
+    list->tokens[len] = NULL;
+    list->len = len;
 }
 
 #endif //MATRIXCORE_TOKENIZE_H

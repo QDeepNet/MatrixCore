@@ -18,7 +18,7 @@ typedef struct {
 #define KeyWordChar(c) ((c) >= 'a' && (c) <= 'z')
 
 
-#define GetChar {if (pos == data.size) goto err; c = data.data[pos++];}
+#define GetChar {if (pos == data.size) goto end; c = data.data[pos++];}
 #define tokenize_keyword_cmp(_data, value)      \
 if (memcmp(data.data + 1, (_data), kw_size) == 0) { \
     type = (value);                             \
@@ -122,21 +122,18 @@ void tokenize_integer(token_t *token, token_parser_t *parser)  {
     do GetChar while (CharInt(c));
 
     if (c == '.') {
-        do GetChar while (CharInt(c));
         sub_type |= IntType_FLOAT;
+        do GetChar while (CharInt(c));
     }
 
-    token->type = TokenType_Int;
+    end:
+
+    token->type = TokenType_Number;
     token->sub_type = sub_type;
 
     token_set_data(token, data.data, pos - 1);
     token_set_line(token, parser->line);
-    tokenize_parser_update_pos(parser, pos);
-    return;
-
-    err:
-    error_set_msg(&parser->error, "Invalid integer token");
-    error_set_line(&parser->error, parser->line);
+    tokenize_parser_update_pos(parser, pos - 1);
 }
 void tokenize_keyword(token_t *token, token_parser_t *parser) {
 

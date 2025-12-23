@@ -3,14 +3,16 @@
 
 
 #include "parser-utils.h"
-#include "tokenize.h"
+#include "token.h"
 #include "error.h"
+#include "node.h"
 
 typedef struct {
     uint8_t *data;
     uint64_t size;
 
     token_list_t tokens;
+    node_list_t nodes;
     error_t error;
 
 
@@ -30,5 +32,9 @@ typedef struct {
     // struct list_st *var_stack; //
     // uint64_t var_start_pos;
 } parser_t;
+
+
+void parser_tokenize(parser_t *parser);
+void parser_parse_ast(parser_t *parser);
 
 #endif //MATRIXCORE_PARSER_H
