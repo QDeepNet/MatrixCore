@@ -104,7 +104,7 @@ uint8_t seti_expr(node_parser_t *parser, node_t *expr) {
 
 uint8_t math_expr(node_parser_t *parser, node_t *expr);
 uint8_t rule_expr(node_parser_t *parser, node_t *expr);
-uint8_t impl_expr(node_parser_t *parser, node_t *expr);
+uint8_t sing_expr(node_parser_t *parser, node_t *expr);
 
 uint8_t nest_expr(node_parser_t *parser, node_t *expr, const uint32_t type) {
     analyze_start
@@ -216,7 +216,7 @@ uint8_t sum_expr (node_parser_t *parser, node_t *expr) {
     check_call(atom_expr(parser, expr_next)) goto err;
 
     expr_add
-    check_call(impl_expr(parser, expr_next)) goto err;
+    check_call(sing_expr(parser, expr_next)) goto err;
 
     expr->type = AST_Type_Sum;
     result = SN_Success;
@@ -240,13 +240,19 @@ uint8_t impl_expr(node_parser_t *parser, node_t *expr) {
 
     expr_rem
 
-    if (expr->nodes.len == 0) goto end;
+    if (expr->nodes.len < 2) goto end;
 
     expr->type = AST_Type_Implicit;
     result = SN_Success;
 
     analyze_end
 }
+uint8_t sing_expr(node_parser_t *parser, node_t *expr) {
+    uint8_t result;
+    if ((result = impl_expr(parser, expr)) != SN_Nothing) return result;
+    return main_expr(parser, expr);
+}
+
 
 
 int8_t expr_priority(const uint16_t sub_type) {
@@ -270,7 +276,7 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
     int8_t priority;
     int8_t stack_pos = -1;
 
-    check_call(impl_expr(parser, expr)) goto end;
+    check_call(sing_expr(parser, expr)) goto end;
 
     while (parser->pos < parser->tokens.len) {
         parser_get;
@@ -300,7 +306,7 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
         node_plist_addend(&node[stack_pos]->nodes, expr_next);
 
         parser_end goto err;
-        check_call(impl_expr(parser, expr_next)) goto err;
+        check_call(sing_expr(parser, expr_next)) goto err;
     }
     result = SN_Success;
     analyze_end

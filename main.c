@@ -199,7 +199,7 @@ static void print_node(const node_t *node) {
 
 int main(void) {
     parser_t parser = {};
-    char *data = "2 + 4 * 12 + 2";
+    char *data = "\\sum_{i = 0}^j (10 + i)(3 + (2a + i)^2)";
     parser.data = (uint8_t *)data;
     parser.size = strlen(data);
 
