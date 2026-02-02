@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "parser.h"
 
 typedef struct {
@@ -262,3 +266,7 @@ void parser_tokenize(parser_t *parser) {
     token_list_clear(&parser->tokens);
     error_set(&parser->error, &tparser.error);
 }
+
+#ifdef __cplusplus
+}
+#endif

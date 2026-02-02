@@ -1,5 +1,8 @@
 #ifndef MATRIXCORE_PARSER_UTILS_H
 #define MATRIXCORE_PARSER_UTILS_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stddef.h>
@@ -48,4 +51,7 @@ static __inline__ void parser_nest_init(parser_nest_t *nest) {
     nest->pos = 0;
 }
 
+#ifdef __cplusplus
+}
+#endif
 #endif //MATRIXCORE_PARSER_UTILS_H

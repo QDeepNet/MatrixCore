@@ -6,9 +6,10 @@
 
 #define PRINT_PREF for(int _i = 0; _i < size; _i++) printf("%c", prefix[_i]);
 #define PRINT_NEXT(expr) \
-printf(expr? "\t├- " : "\t└- "); \
-prefix[size + 1] = expr? '|' : ' '; \
-prefix[size] = '\t';
+printf(expr? "  ├- " : "  └- "); \
+prefix[size + 2] = expr? '|' : ' '; \
+prefix[size + 1] = ' '; \
+prefix[size] = ' ';
 
 char prefix[100];
 void *printing[100];
@@ -117,7 +118,7 @@ static void print_token_list__(const token_list_t *list, const uint64_t size) {
 
         for (int64_t i = 0; i < list->len; i ++) {
             PRINT_PREF PRINT_NEXT(i + 1 < list->len)
-            print_token__(list->tokens[i], size + 2);
+            print_token__(list->tokens[i], size + 3);
         }
     }
 }
@@ -165,11 +166,11 @@ static void print_node__(const node_t *node, const uint64_t size) {
 
     if (node->tokens.len > 0) {
         PRINT_PREF PRINT_NEXT(node->nodes.len > 0)
-        print_token_list__(&node->tokens, size + 2);
+        print_token_list__(&node->tokens, size + 3);
     }
     if (node->nodes.len > 0) {
         PRINT_PREF PRINT_NEXT(0)
-        print_node_list__(&node->nodes, size + 2);
+        print_node_list__(&node->nodes, size + 3);
     }
 }
 static void print_node_list__(const node_list_t *list, const uint64_t size) {
@@ -180,7 +181,7 @@ static void print_node_list__(const node_list_t *list, const uint64_t size) {
 
         for (int64_t i = 0; i < list->len; i ++) {
             PRINT_PREF PRINT_NEXT(i + 1 < list->len)
-            print_node__(list->nodes[i], size + 2);
+            print_node__(list->nodes[i], size + 3);
         }
     }
 }
@@ -199,7 +200,7 @@ static void print_node(const node_t *node) {
 
 int main(void) {
     parser_t parser = {};
-    char *data = "\\sum_{i = 0}^j (10 + i)(3 + (2a + i)^2)";
+    const char *data = "\\sum_{i = 0}^n (10 + i) \\sum_{j = 0}^n(3 + j)^2";
     parser.data = (uint8_t *)data;
     parser.size = strlen(data);
 

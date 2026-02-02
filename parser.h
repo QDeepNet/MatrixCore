@@ -1,6 +1,8 @@
 #ifndef MATRIXCORE_PARSER_H
 #define MATRIXCORE_PARSER_H
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "parser-utils.h"
 #include "token.h"
@@ -37,4 +39,7 @@ typedef struct {
 void parser_tokenize(parser_t *parser);
 void parser_parse_ast(parser_t *parser);
 
+#ifdef __cplusplus
+}
+#endif
 #endif //MATRIXCORE_PARSER_H

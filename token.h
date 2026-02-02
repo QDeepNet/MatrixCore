@@ -1,9 +1,8 @@
-//
-// Created by stve on 12/22/25.
-//
-
 #ifndef MATRIXCORE_TOKENIZE_H
 #define MATRIXCORE_TOKENIZE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -71,7 +70,7 @@ typedef struct {
 } token_list_t;
 
 static __inline__ token_t *token_init() {
-    token_t *token = malloc(sizeof(token_t));
+    token_t *token = (token_t *)malloc(sizeof(token_t));
     token->type = TokenType_None;
     token->sub_type = TokenType_None;
 
@@ -105,10 +104,10 @@ static __inline__ void token_set_line(token_t *token, const parser_line_t line) 
 static __inline__ void __token_list_resize(token_list_t *list, const uint64_t cap) {
     if (list->tokens == NULL && cap != 0) {
         list->cap = cap;
-        list->tokens = malloc(sizeof(token_t *) * cap);
+        list->tokens = (token_t **)malloc(sizeof(token_t *) * cap);
         for (uint64_t i = 0; i < cap; i++) list->tokens[i] = NULL;
     } else if (list->cap < cap) {
-        list->tokens = realloc(list->tokens, sizeof(token_t *) * cap * 2);
+        list->tokens = (token_t **)realloc(list->tokens, sizeof(token_t *) * cap * 2);
         for (uint64_t i = list->cap, l = cap * 2; i < l; i++) list->tokens[i] = NULL;
         list->cap = cap * 2;
     }
@@ -198,4 +197,7 @@ static __inline__ void token_plist_pop(token_list_t *list) {
     list->len = len;
 }
 
+#ifdef __cplusplus
+}
+#endif
 #endif //MATRIXCORE_TOKENIZE_H

@@ -1,5 +1,8 @@
 #ifndef MATRIXCORE_NODE_H
 #define MATRIXCORE_NODE_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include "token.h"
 
@@ -39,7 +42,7 @@ static __inline__ void node_plist_set(node_list_t *list, const node_list_t *src)
 
 
 static __inline__ node_t *node_init() {
-    node_t *node = malloc(sizeof(node_t));
+    node_t *node = (node_t *)malloc(sizeof(node_t));
 
     node->type = AST_Type_None;
 
@@ -77,10 +80,10 @@ static __inline__ void node_set(node_t *node, const node_t *src) {
 static __inline__ void node_list_resize(node_list_t *list, const uint64_t cap) {
     if (list->nodes == NULL && cap != 0) {
         list->cap = cap;
-        list->nodes = malloc(sizeof(node_t *) * cap);
+        list->nodes = (node_t **)malloc(sizeof(node_t *) * cap);
         for (uint64_t i = 0; i < cap; i++) list->nodes[i] = NULL;
     } else if (list->cap < cap) {
-        list->nodes = realloc(list->nodes, sizeof(node_t *) * cap * 2);
+        list->nodes = (node_t **)realloc(list->nodes, sizeof(node_t *) * cap * 2);
         for (uint64_t i = list->cap, l = cap * 2; i < l; i++) list->nodes[i] = NULL;
         list->cap = cap * 2;
     }
@@ -127,10 +130,10 @@ static __inline__ void node_list_pop(node_list_t *list) {
 static __inline__ void node_plist_resize(node_list_t *list, const uint64_t cap) {
     if (list->nodes == NULL && cap != 0) {
         list->cap = cap;
-        list->nodes = malloc(sizeof(node_t *) * cap);
+        list->nodes = (node_t **)malloc(sizeof(node_t *) * cap);
         for (uint64_t i = 0; i < cap; i++) list->nodes[i] = NULL;
     } else if (list->cap < cap) {
-        list->nodes = realloc(list->nodes, sizeof(node_t *) * cap * 2);
+        list->nodes = (node_t **)realloc(list->nodes, sizeof(node_t *) * cap * 2);
         for (uint64_t i = list->cap, l = cap * 2; i < l; i++) list->nodes[i] = NULL;
         list->cap = cap * 2;
     }
@@ -174,4 +177,8 @@ static __inline__ void node_plist_pop(node_list_t *list) {
     list->len = len;
 }
 
+
+#ifdef __cplusplus
+}
+#endif
 #endif //MATRIXCORE_NODE_H

@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <math.h>
 
 #include "parser.h"
@@ -380,3 +384,6 @@ void parser_parse_ast(parser_t *parser) {
 
 
 
+#ifdef __cplusplus
+}
+#endif
