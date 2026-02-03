@@ -1,7 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <math.h>
 
 #include "parser.h"
@@ -381,9 +377,3 @@ void parser_parse_ast(parser_t *parser) {
 ///         seti > math |
 ///         seti \le math |
 ///         seti \ge math |
-
-
-
-#ifdef __cplusplus
-}
-#endif

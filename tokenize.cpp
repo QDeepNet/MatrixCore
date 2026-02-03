@@ -1,7 +1,3 @@
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "parser.h"
 
 typedef struct {
@@ -28,11 +24,11 @@ if (memcmp(data.data + 1, (_data), kw_size) == 0) { \
     goto end;                                   \
 }
 
-static __inline__ void tokenize_parser_pos_cast(parser_data_t *pos, const token_parser_t *parser) {
+static void tokenize_parser_pos_cast(parser_data_t *pos, const token_parser_t *parser) {
     pos->data = parser->data.data + parser->line.pos;
     pos->size = parser->data.size - parser->line.pos;
 }
-static __inline__ void tokenize_parser_update_pos(token_parser_t *parser, const uint64_t pos) {
+static void tokenize_parser_update_pos(token_parser_t *parser, const uint64_t pos) {
     parser->line.pos += pos;
 }
 
@@ -185,9 +181,10 @@ void tokenize_special(token_t *token, token_parser_t *parser) {
     tokenize_parser_pos_cast(&data, parser);
 
     uint16_t res = Special_None;
+    uint8_t c1;
 
     if (0 == data.size) goto end;
-    const uint8_t c1 = data.data[0];
+    c1 = data.data[0];
     res = Special_OneChar(c1, &parser->nest, &parser->error);
 
 
@@ -266,7 +263,3 @@ void parser_tokenize(parser_t *parser) {
     token_list_clear(&parser->tokens);
     error_set(&parser->error, &tparser.error);
 }
-
-#ifdef __cplusplus
-}
-#endif

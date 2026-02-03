@@ -38,9 +38,9 @@ __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
     int64_t offset_j = m->data->offset_j;
     __shared__ int64_t values[1024];
 
-    uint64_t i  = offset_i + m->ids_i[threadIdx.x];
-    uint64_t j  = offset_j + blockIdx.x;
-    uint64_t ij = m->ids_j[blockIdx.x];
+    int64_t i  = offset_i + m->ids_i[threadIdx.x];
+    int64_t j  = offset_j + blockIdx.x;
+    int64_t ij = m->ids_j[blockIdx.x];
 
     if (p->min_i > i || i > p->max_i) goto sum;
     if (p->min_j > j || j > p->max_j) goto sum;
@@ -113,7 +113,7 @@ __device__ void __constructor_pow(device_matrix_t *m) {
 }
 
 
-__device__ void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
+__global__  void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
     for (uint64_t i = 0; i < size;) {
 
         switch (list[i++]) {

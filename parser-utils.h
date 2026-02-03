@@ -1,11 +1,7 @@
 #ifndef MATRIXCORE_PARSER_UTILS_H
 #define MATRIXCORE_PARSER_UTILS_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#include <stdint.h>
-#include <stddef.h>
+#include <cstdint>
 
 #define MaxBracketNesting 256
 
@@ -27,31 +23,10 @@ typedef struct {
     uint64_t pos;
 } parser_nest_t;
 
-static __inline__ void parser_data_init(parser_data_t *data) {
-    if (data == NULL) return;
-    data->data = NULL;
-    data->size = 0;
-}
 
-static __inline__ void parser_data_set(parser_data_t *data, const uint8_t* str, const uint64_t size) {
-    if (data == NULL) return;
-    data->data = str;
-    data->size = size;
-}
+void parser_data_init(parser_data_t *data);
+void parser_data_set(parser_data_t *data, const uint8_t* str, const uint64_t size);
+void parser_line_init(parser_line_t *line);
+void parser_nest_init(parser_nest_t *nest);
 
-static __inline__ void parser_line_init(parser_line_t *line) {
-    if (line == NULL) return;
-    line->pos = 0;
-    line->line_pos = 0;
-    line->line_num = 0;
-}
-
-static __inline__ void parser_nest_init(parser_nest_t *nest) {
-    if (nest == NULL) return;
-    nest->pos = 0;
-}
-
-#ifdef __cplusplus
-}
-#endif
 #endif //MATRIXCORE_PARSER_UTILS_H

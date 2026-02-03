@@ -33,7 +33,7 @@ typedef struct {
     int64_t max_j;
 } instruction_params_t;
 
-__device__ void __constructor_interpreter(device_matrix_t *m, device_instruction *list, uint64_t size);
+__global__  void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, uint64_t size);
 
 static __inline__ void device_matrix_init(uint64_t n) {
     device_matrix_t *m = (device_matrix_t *) malloc(sizeof(device_matrix_t));
@@ -63,8 +63,8 @@ static __inline__ void device_matrix_free(device_matrix_t *m) {
 
 
 
-static __inline__ void constructor_interpreter(device_matrix_t *m, device_instruction *list, const uint64_t size) {
-    __constructor_interpreter<<<1024, 1024>>>(m, list, size);
+static void constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
+    __constructor_interpreter<<<1024, 1024>>>(m, p, list, size);
 }
 
 
