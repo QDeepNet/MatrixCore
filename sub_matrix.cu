@@ -32,17 +32,18 @@ __device__ void __constructor_set_value_qj(device_matrix_t *m) {
     m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = m->q_j[blockIdx.x];
     if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
 }
-__device__ void __constructor_put(device_matrix_t *m) {
+__device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
     int64_t val = 0;
+    int64_t offset_i = m->data->offset_i;
     int64_t offset_j = m->data->offset_j;
     __shared__ int64_t values[1024];
 
-    uint64_t i  = m->ids_i[threadIdx.x];
+    uint64_t i  = offset_i + m->ids_i[threadIdx.x];
     uint64_t j  = offset_j + blockIdx.x;
     uint64_t ij = m->ids_j[blockIdx.x];
 
-    if (m->data->min_i > i || i > m->data->max_i) goto sum;
-    if (m->data->min_j > j || j > m->data->max_j) goto sum;
+    if (p->min_i > i || i > p->max_i) goto sum;
+    if (p->min_j > j || j > p->max_j) goto sum;
     if (ij == -1) goto sum;
 
     atomicAdd((unsigned long long *)m->matrix + m->data->n * ij + threadIdx.x, m->stack[blockIdx.x << 10 | threadIdx.x]);
@@ -51,13 +52,13 @@ __device__ void __constructor_put(device_matrix_t *m) {
     __syncthreads();
 
 
-    i = m->ids_i[blockIdx.x];
+    i = offset_i + m->ids_i[blockIdx.x];
     j = offset_j + threadIdx.x;
     ij = m->ids_j[threadIdx.x];
 
 
-    if (m->data->min_i > i || i > m->data->max_i) goto sum;
-    if (m->data->min_j > j || j > m->data->max_j) goto sum;
+    if (p->min_i > i || i > p->max_i) goto sum;
+    if (p->min_j > j || j > p->max_j) goto sum;
     if (ij != -1) goto sum;
 
     val = m->stack[threadIdx.x << 10 | blockIdx.x];
@@ -112,7 +113,7 @@ __device__ void __constructor_pow(device_matrix_t *m) {
 }
 
 
-__device__ void __constructor_interpreter(device_matrix_t *m, device_instruction *list, const uint64_t size) {
+__device__ void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
     for (uint64_t i = 0; i < size;) {
 
         switch (list[i++]) {
@@ -141,7 +142,7 @@ __device__ void __constructor_interpreter(device_matrix_t *m, device_instruction
                 __constructor_set_value_qj(m);break;
 
             case PUT:
-                __constructor_put(m); break;
+                __constructor_put(m, p); break;
             default: break;
         }
     }

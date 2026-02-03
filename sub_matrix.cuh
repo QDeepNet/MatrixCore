@@ -7,14 +7,10 @@
 
 typedef struct {
     int64_t n;
+    int64_t offset_i;
     int64_t offset_j;
-
-    int64_t min_i;
-    int64_t max_i;
-
-    int64_t min_j;
-    int64_t max_j;
 } device_data_t;
+
 
 typedef struct {
     device_data_t *data;
@@ -29,6 +25,13 @@ typedef struct {
 } device_matrix_t;
 
 typedef uint8_t device_instruction;
+typedef struct {
+    int64_t min_i;
+    int64_t max_i;
+
+    int64_t min_j;
+    int64_t max_j;
+} instruction_params_t;
 
 __device__ void __constructor_interpreter(device_matrix_t *m, device_instruction *list, uint64_t size);
 
