@@ -33,7 +33,7 @@ err:    result = SN_Error;  parser_error("Unexpected Error") goto end;
 
 #define expr_cast {\
 expr_next = node_init();                        \
-node_set(expr_next, expr); node_clear(expr);    \
+node_move(expr_next, expr);                     \
 node_list_addend(&expr->nodes, expr_next);}     \
 
 #define expr_add {\
@@ -328,8 +328,7 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
 
         if (stack_pos == -1 || priority < stack[stack_pos]) {
             expr_next = node_init();
-            node_set(expr_next, prev);
-            node_clear(prev);
+            node_move(expr_next, prev);
             node_list_addend(&prev->nodes, expr_next);
 
             prev->type = AST_Type_Multiplication + priority;

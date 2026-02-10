@@ -9,7 +9,7 @@ node_t *node_init() {
     node->symbol = 0;
     node->operation = 0;
 
-    node_plist_init(&node->nodes);
+    node_list_init(&node->nodes);
 
     return node;
 }
@@ -20,17 +20,17 @@ void node_clear(node_t *node) {
     node->symbol = 0;
     node->operation = 0;
 
-    node_plist_clear(&node->nodes);
+    node_list_clear(&node->nodes);
 
 }
 void node_free(node_t *node) {
     if (node == nullptr) return;
-    node_plist_free(&node->nodes);
+    node_list_free(&node->nodes);
 
     free(node);
 }
 
-void node_set(node_t *node, const node_t *src) {
+void node_move(node_t *node, node_t *src) {
     if (node == nullptr) return;
     if (src == nullptr) return node_clear(node);
     node->type = src->type;
@@ -38,7 +38,12 @@ void node_set(node_t *node, const node_t *src) {
     node->symbol = src->symbol;
     node->operation = src->operation;
 
-    node_plist_set(&node->nodes, &src->nodes);
+    src->type = AST_Type_None;
+    src->number = 0;
+    src->symbol = 0;
+    src->operation = 0;
+
+    node_list_move(&node->nodes, &src->nodes);
 }
 
 
@@ -74,6 +79,20 @@ void node_list_free(node_list_t *list) {
     if (list == nullptr || list->nodes == nullptr) return;
     node_list_resize(list, 0);
     free(list->nodes);
+}
+
+
+void node_list_move(node_list_t *list, node_list_t *src) {
+    if (list == nullptr) return;
+    node_list_clear(list);
+    if (src == nullptr) return;
+
+    node_list_resize(list, src->len);
+    for (uint64_t i = 0; i < src->len; ++i) {
+        list->nodes[i] = src->nodes[i];
+        src->nodes[i] = nullptr;
+    }
+    src->len = 0;
 }
 
 node_t *node_list_append(node_list_t *list) {

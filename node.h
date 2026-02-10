@@ -39,7 +39,7 @@ node_t *node_init();
 void node_clear(node_t *node);
 void node_free(node_t *node);
 
-void node_set(node_t *node, const node_t *src);
+void node_move(node_t *node, node_t *src);
 
 
 void node_list_resize(node_list_t *list, uint64_t cap);
@@ -48,20 +48,22 @@ void node_list_init(node_list_t *list);
 void node_list_clear(node_list_t *list);
 void node_list_free(node_list_t *list);
 
+void node_list_move(node_list_t *list, node_list_t *src);
+
 node_t *node_list_append(node_list_t *list);
 void node_list_addend(node_list_t *list, node_t *node);
 void node_list_pop(node_list_t *list);
 
 
-void node_plist_resize(node_list_t *list, uint64_t cap);
-
-void node_plist_init(node_list_t *list);
-void node_plist_clear(node_list_t *list);
-void node_plist_free(const node_list_t *list);
-
-void node_plist_set(node_list_t *list, const node_list_t *src);
-void node_plist_addend(node_list_t *list, node_t *node);
-void node_plist_pop(node_list_t *list);
+// void node_plist_resize(node_list_t *list, uint64_t cap);
+//
+// void node_plist_init(node_list_t *list);
+// void node_plist_clear(node_list_t *list);
+// void node_plist_free(const node_list_t *list);
+//
+// void node_plist_set(node_list_t *list, const node_list_t *src);
+// void node_plist_addend(node_list_t *list, node_t *node);
+// void node_plist_pop(node_list_t *list);
 
 
 #endif //MATRIXCORE_NODE_H
