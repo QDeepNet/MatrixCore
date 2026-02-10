@@ -252,84 +252,84 @@ void parser_sum_limits(bytecode_t *bytecode, node_t *node) {
     bytecode->min[count] = node->nodes.nodes[0]->nodes.nodes[1]->number;
     bytecode->max[count] = node->nodes.nodes[1]->number;
 }
-void parser_sum_interpret(const parser_t *parser) {
-    bytecode_t bytecode;
-    node_list_t listing;
-    node_list_t interpret;
-
-    bytecode_init(&bytecode);
-    node_plist_init(&listing);
-    node_plist_init(&interpret);
-
-    node_plist_addend(&listing, parser->nodes.nodes[0]);
-
-    while (listing.len != 0) {
-        node_t *node = listing.nodes[listing.len - 1];
-        node_plist_pop(&listing);
-
-        switch (node->type) {
-            case AST_Type_Sum:
-                parser_sum_limits(&bytecode, node);
-                node_plist_addend(&listing, node->nodes.nodes[2]);
-                break;
-
-            case AST_Type_Number:
-            case AST_Type_Identifier:
-            case AST_Type_QBit:
-                node_plist_addend(&interpret, node);
-                break;
-
-            case AST_Type_Power:
-            case AST_Type_Negative:
-            case AST_Type_Multiplication:
-            case AST_Type_Addition:
-            case AST_Type_Compare:
-                node_plist_addend(&interpret, node);
-                if (node->nodes.len <= 0) break;
-
-                for (int64_t i = 0; i < node->nodes.len; i ++)
-                    node_plist_addend(&listing, node->nodes.nodes[i]);
-                break;
-            default:
-                break;
-        }
-    }
-
-    while (interpret.len != 0) {
-        node_t *node = interpret.nodes[interpret.len - 1];
-        node_plist_pop(&interpret);
-        if (node->type == AST_Type_Number) {
-            bytecode_addend_op(&bytecode, SET);
-            bytecode_addend_val(&bytecode, node->number);
-        } else if (node->type == AST_Type_QBit) {
-            if (node->symbol == bytecode.symbol[0]) {
-                bytecode_addend_op(&bytecode, SET);
-                bytecode_addend_val(&bytecode, 1);
-            }
-            if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_QJ);
-        } else if (node->type == AST_Type_Identifier) {
-            if (node->symbol == bytecode.symbol[0]) bytecode_addend_op(&bytecode, SET_I);
-            if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_J);
-        } else if (node->type == AST_Type_Power) {
-            bytecode_addend_op(&bytecode, POW);
-        } else if (node->type == AST_Type_Negative) {
-            bytecode_addend_op(&bytecode, NEG);
-        // // } else if (node->type == AST_Type_Multiplication) {
-        // //     for (int i = 0; i < node->nodes.len - 1; i ++)
-        // //         bytecode_addend_op(&bytecode, MUL);
-        // // } else if (node->type == AST_Type_Division) {
-        // //     for (int i = 0; i < node->nodes.len - 1; i ++)
-        // //         bytecode_addend_op(&bytecode, DIV);
-        } else {
-        }
-    }
-
-    print_bytecode(&bytecode);
-
-    node_plist_free(&listing);
-    node_plist_free(&interpret);
-    bytecode_free(&bytecode);
-}
+// void parser_sum_interpret(const parser_t *parser) {
+//     bytecode_t bytecode;
+//     node_list_t listing;
+//     node_list_t interpret;
+//
+//     bytecode_init(&bytecode);
+//     node_plist_init(&listing);
+//     node_plist_init(&interpret);
+//
+//     node_plist_addend(&listing, parser->nodes.nodes[0]);
+//
+//     while (listing.len != 0) {
+//         node_t *node = listing.nodes[listing.len - 1];
+//         node_plist_pop(&listing);
+//
+//         switch (node->type) {
+//             case AST_Type_Sum:
+//                 parser_sum_limits(&bytecode, node);
+//                 node_plist_addend(&listing, node->nodes.nodes[2]);
+//                 break;
+//
+//             case AST_Type_Number:
+//             case AST_Type_Identifier:
+//             case AST_Type_QBit:
+//                 node_plist_addend(&interpret, node);
+//                 break;
+//
+//             case AST_Type_Power:
+//             case AST_Type_Negative:
+//             case AST_Type_Multiplication:
+//             case AST_Type_Addition:
+//             case AST_Type_Compare:
+//                 node_plist_addend(&interpret, node);
+//                 if (node->nodes.len <= 0) break;
+//
+//                 for (int64_t i = 0; i < node->nodes.len; i ++)
+//                     node_plist_addend(&listing, node->nodes.nodes[i]);
+//                 break;
+//             default:
+//                 break;
+//         }
+//     }
+//
+//     while (interpret.len != 0) {
+//         node_t *node = interpret.nodes[interpret.len - 1];
+//         node_plist_pop(&interpret);
+//         if (node->type == AST_Type_Number) {
+//             bytecode_addend_op(&bytecode, SET);
+//             bytecode_addend_val(&bytecode, node->number);
+//         } else if (node->type == AST_Type_QBit) {
+//             if (node->symbol == bytecode.symbol[0]) {
+//                 bytecode_addend_op(&bytecode, SET);
+//                 bytecode_addend_val(&bytecode, 1);
+//             }
+//             if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_QJ);
+//         } else if (node->type == AST_Type_Identifier) {
+//             if (node->symbol == bytecode.symbol[0]) bytecode_addend_op(&bytecode, SET_I);
+//             if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_J);
+//         } else if (node->type == AST_Type_Power) {
+//             bytecode_addend_op(&bytecode, POW);
+//         } else if (node->type == AST_Type_Negative) {
+//             bytecode_addend_op(&bytecode, NEG);
+//         // // } else if (node->type == AST_Type_Multiplication) {
+//         // //     for (int i = 0; i < node->nodes.len - 1; i ++)
+//         // //         bytecode_addend_op(&bytecode, MUL);
+//         // // } else if (node->type == AST_Type_Division) {
+//         // //     for (int i = 0; i < node->nodes.len - 1; i ++)
+//         // //         bytecode_addend_op(&bytecode, DIV);
+//         } else {
+//         }
+//     }
+//
+//     print_bytecode(&bytecode);
+//
+//     node_plist_free(&listing);
+//     node_plist_free(&interpret);
+//     bytecode_free(&bytecode);
+// }
 void parser_interpret(const parser_t *parser) {
 
 }
@@ -347,5 +347,5 @@ int main(void) {
 
     // print_token_list(&parser.tokens);
 
-    print_node_list(&parser.nodes);
+    print_node(&parser.ast);
 }

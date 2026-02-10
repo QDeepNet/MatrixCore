@@ -11,15 +11,13 @@
 #define SN_Error         3
 
 #define analyze_start \
-const uint64_t nodes = parser->nodes.len;   \
 const uint64_t pos = parser->pos;           \
 node_t *expr_next = expr;                   \
-token_t *token = NULL;                      \
+token_t *token = nullptr;                   \
 uint8_t result = SN_Nothing, sub_result;
 
 #define analyze_end end: \
 if (result == SN_Success) return SN_Success;    \
-node_list_resize(&parser->nodes, nodes);        \
 node_clear(expr); parser->pos = pos;            \
 return result;                                  \
 analyze_end_sub
@@ -34,17 +32,16 @@ sub:    result = sub_result; goto end;                                  \
 err:    result = SN_Error;  parser_error("Unexpected Error") goto end;
 
 #define expr_cast {\
-expr_next = node_list_append(&parser->nodes);   \
+expr_next = node_init();                        \
 node_set(expr_next, expr); node_clear(expr);    \
-node_plist_addend(&expr->nodes, expr_next);}    \
+node_list_addend(&expr->nodes, expr_next);}     \
 
 #define expr_add {\
-expr_next = node_list_append(&parser->nodes);   \
-node_plist_addend(&expr->nodes, expr_next);}    \
+expr_next = node_init();                        \
+node_list_addend(&expr->nodes, expr_next);}     \
 
 #define expr_rem {\
-node_list_pop(&parser->nodes);                  \
-node_plist_pop(&expr->nodes);}                  \
+node_list_pop(&expr->nodes);}                   \
 
 #define check_call(call) \
 sub_result = call;                              \
@@ -58,7 +55,6 @@ if (sub_result != SN_Nothing) {                 \
 
 typedef struct {
     token_list_t tokens;
-    node_list_t nodes;
 
     error_t error;
     uint64_t pos;
@@ -331,10 +327,10 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
             prev = node[stack_pos--];
 
         if (stack_pos == -1 || priority < stack[stack_pos]) {
-            expr_next = node_list_append(&parser->nodes);
+            expr_next = node_init();
             node_set(expr_next, prev);
             node_clear(prev);
-            node_plist_addend(&prev->nodes, expr_next);
+            node_list_addend(&prev->nodes, expr_next);
 
             prev->type = AST_Type_Multiplication + priority;
 
@@ -344,8 +340,8 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
         }
 
 
-        expr_next = node_list_append(&parser->nodes);
-        node_plist_addend(&node[stack_pos]->nodes, expr_next);
+        expr_next = node_init();
+        node_list_addend(&node[stack_pos]->nodes, expr_next);
 
         parser_end goto err;
         check_call(negt_expr(parser, expr_next)) goto err;
@@ -376,22 +372,22 @@ uint8_t rule_expr(node_parser_t *parser, node_t *expr) {
     analyze_end
 }
 
+
 void parser_parse_ast(parser_t *parser) {
-    if (parser == NULL) return;
-    node_list_clear(&parser->nodes);
+    if (parser == nullptr) return;
+    node_clear(&parser->ast);
 
     node_parser_t ast_parser;
     ast_parser.tokens = parser->tokens;
-    ast_parser.nodes = parser->nodes;
     ast_parser.pos = 0;
 
     error_init(&ast_parser.error);
-
-    node_t *expr = node_list_append(&parser->nodes);
-    if (math_expr(&ast_parser, expr) != SN_Success) {
-        node_list_clear(&parser->nodes);
+    if (math_expr(&ast_parser, &parser->ast) != SN_Success) {
+        node_clear(&parser->ast);
         error_set(&parser->error, &ast_parser.error);
     }
+
+    token_list_clear(&parser->tokens);
 }
 // seti, geti, numb
 /// nest := {math}

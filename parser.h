@@ -10,7 +10,7 @@ typedef struct {
     uint64_t size;
 
     token_list_t tokens;
-    node_list_t nodes;
+    node_t ast;
     error_t error;
 
 

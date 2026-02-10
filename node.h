@@ -49,6 +49,7 @@ void node_list_clear(node_list_t *list);
 void node_list_free(node_list_t *list);
 
 node_t *node_list_append(node_list_t *list);
+void node_list_addend(node_list_t *list, node_t *node);
 void node_list_pop(node_list_t *list);
 
 

@@ -82,6 +82,12 @@ node_t *node_list_append(node_list_t *list) {
     node_list_resize(list, len + 1);
     return list->nodes[len] = node_init();
 }
+void node_list_addend(node_list_t *list, node_t *node) {
+    if (list == nullptr) return;
+    const uint64_t len = list->len;
+    node_list_resize(list, len + 1);
+    list->nodes[len] = node;
+}
 void node_list_pop(node_list_t *list) {
     if (list == nullptr) return;
     const uint64_t len = list->len - 1;

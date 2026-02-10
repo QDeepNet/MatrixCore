@@ -26,4 +26,5 @@ add_executable(MatrixCore main.cpp
         interpreter.cpp
         bytecode.h
         bytecode.cpp
+        optimizer.cpp
 )
