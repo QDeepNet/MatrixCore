@@ -7,8 +7,8 @@ node_t *node_init() {
     node->type = AST_Type_None;
     node->number = 0;
     node->symbol = 0;
+    node->operation = 0;
 
-    token_plist_init(&node->tokens);
     node_plist_init(&node->nodes);
 
     return node;
@@ -18,14 +18,13 @@ void node_clear(node_t *node) {
     node->type = AST_Type_None;
     node->number = 0;
     node->symbol = 0;
+    node->operation = 0;
 
-    token_plist_clear(&node->tokens);
     node_plist_clear(&node->nodes);
 
 }
 void node_free(node_t *node) {
     if (node == nullptr) return;
-    token_plist_free(&node->tokens);
     node_plist_free(&node->nodes);
 
     free(node);
@@ -37,8 +36,8 @@ void node_set(node_t *node, const node_t *src) {
     node->type = src->type;
     node->number = src->number;
     node->symbol = src->symbol;
+    node->operation = src->operation;
 
-    token_plist_set(&node->tokens, &src->tokens);
     node_plist_set(&node->nodes, &src->nodes);
 }
 

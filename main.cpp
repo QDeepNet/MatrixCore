@@ -135,11 +135,8 @@ static void print_node__(const node_t *node, const uint64_t size) {
         case AST_Type_Number:
             printf("Number : \n");
             break;
-        case AST_Type_GetIdent:
-            printf("GetIdent : \n");
-            break;
-        case AST_Type_SetIdent:
-            printf("SetIdent : \n");
+        case AST_Type_Identifier:
+            printf("Identifier : \n");
             break;
         case AST_Type_QBit:
             printf("QBit : \n");
@@ -149,9 +146,6 @@ static void print_node__(const node_t *node, const uint64_t size) {
             break;
         case AST_Type_Sum:
             printf("Sum : \n");
-            break;
-        case AST_Type_Implicit:
-            printf("Implicit : \n");
             break;
         case AST_Type_Multiplication:
             printf("Multiplication : \n");
@@ -167,12 +161,12 @@ static void print_node__(const node_t *node, const uint64_t size) {
     }
 
     if (node->type == AST_Type_Number) {
-        PRINT_PREF PRINT_NEXT(node->nodes.len > 0 || node->tokens.len > 0)
+        PRINT_PREF PRINT_NEXT(node->nodes.len > 0)
         printf("%lld\n", node->number);
     }
-    if (node->tokens.len > 0) {
+    if (node->type == AST_Type_Identifier || node->type == AST_Type_QBit) {
         PRINT_PREF PRINT_NEXT(node->nodes.len > 0)
-        print_token_list__(&node->tokens, size + 3);
+        printf("%c\n", node->symbol);
     }
     if (node->nodes.len > 0) {
         PRINT_PREF PRINT_NEXT(0)
@@ -280,17 +274,14 @@ void parser_sum_interpret(const parser_t *parser) {
                 break;
 
             case AST_Type_Number:
-            case AST_Type_GetIdent:
-            case AST_Type_SetIdent:
+            case AST_Type_Identifier:
             case AST_Type_QBit:
                 node_plist_addend(&interpret, node);
                 break;
 
             case AST_Type_Power:
-            case AST_Type_Implicit:
             case AST_Type_Negative:
             case AST_Type_Multiplication:
-            case AST_Type_Division:
             case AST_Type_Addition:
             case AST_Type_Compare:
                 node_plist_addend(&interpret, node);
@@ -316,14 +307,11 @@ void parser_sum_interpret(const parser_t *parser) {
                 bytecode_addend_val(&bytecode, 1);
             }
             if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_QJ);
-        } else if (node->type == AST_Type_GetIdent) {
+        } else if (node->type == AST_Type_Identifier) {
             if (node->symbol == bytecode.symbol[0]) bytecode_addend_op(&bytecode, SET_I);
             if (node->symbol == bytecode.symbol[1]) bytecode_addend_op(&bytecode, SET_J);
         } else if (node->type == AST_Type_Power) {
             bytecode_addend_op(&bytecode, POW);
-        } else if (node->type == AST_Type_Implicit) {
-            for (int i = 0; i < node->nodes.len - 1; i ++)
-                bytecode_addend_op(&bytecode, MUL);
         } else if (node->type == AST_Type_Negative) {
             bytecode_addend_op(&bytecode, NEG);
         // // } else if (node->type == AST_Type_Multiplication) {
@@ -333,8 +321,6 @@ void parser_sum_interpret(const parser_t *parser) {
         // //     for (int i = 0; i < node->nodes.len - 1; i ++)
         // //         bytecode_addend_op(&bytecode, DIV);
         } else {
-            for (int64_t i = node->tokens.len; i > 0;)
-                bytecode_addend_op(&bytecode, node->tokens.tokens[--i]->sub_type - Special_ADD + ADD);
         }
     }
 
@@ -357,9 +343,9 @@ int main(void) {
 
     parser_tokenize(&parser);
     parser_parse_ast(&parser);
-    parser_sum_interpret(&parser);
+    // parser_sum_interpret(&parser);
 
     // print_token_list(&parser.tokens);
 
-    // print_node_list(&parser.nodes);
+    print_node_list(&parser.nodes);
 }

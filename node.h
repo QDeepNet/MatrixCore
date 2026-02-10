@@ -6,17 +6,17 @@
 
 #define AST_Type_None           0x00
 #define AST_Type_Number         0x01
-#define AST_Type_GetIdent       0x02
-#define AST_Type_SetIdent       0x03
-#define AST_Type_QBit           0x04
-#define AST_Type_Power          0x05
-#define AST_Type_Sum            0x06
-#define AST_Type_Implicit       0x07
-#define AST_Type_Negative       0x08
-#define AST_Type_Multiplication 0x09
-#define AST_Type_Division       0x0a
-#define AST_Type_Addition       0x0b
-#define AST_Type_Compare        0x0c
+#define AST_Type_Identifier     0x02
+#define AST_Type_QBit           0x03
+#define AST_Type_Power          0x04
+#define AST_Type_Sum            0x05
+#define AST_Type_Negative       0x06
+#define AST_Type_Multiplication 0x07
+#define AST_Type_Addition       0x08
+#define AST_Type_Compare        0x09
+
+#define AST_Operation_Negative        0x00
+#define AST_Operation_Positive        0x01
 
 
 typedef struct {
@@ -29,8 +29,8 @@ typedef struct node_st {
     uint16_t type;
     int64_t number;
     uint8_t symbol;
+    uint8_t operation;
 
-    token_list_t tokens;
     node_list_t nodes;
 } node_t;
 
