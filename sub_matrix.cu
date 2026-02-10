@@ -2,20 +2,6 @@
 #include "sub_matrix.cuh"
 
 
-#define ADD 0x01
-#define SUB 0x02
-#define MUL 0x03
-#define DIV 0x04
-#define MOD 0x05
-#define POW 0x06
-
-#define SET     0x10
-#define SET_I   0x11
-#define SET_J   0x12
-#define SET_QJ  0x13
-
-#define PUT     0x20
-
 __device__ void __constructor_set_const(device_matrix_t *m, const int64_t value) {
     m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = value;
     if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
@@ -34,11 +20,10 @@ __device__ void __constructor_set_value_qj(device_matrix_t *m) {
 }
 __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
     int64_t val = 0;
-    int64_t offset_i = m->data->offset_i;
     int64_t offset_j = m->data->offset_j;
     __shared__ int64_t values[1024];
 
-    int64_t i  = offset_i + m->ids_i[threadIdx.x];
+    int64_t i  = m->ids_i[threadIdx.x];
     int64_t j  = offset_j + blockIdx.x;
     int64_t ij = m->ids_j[blockIdx.x];
 
@@ -52,14 +37,14 @@ __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
     __syncthreads();
 
 
-    i = offset_i + m->ids_i[blockIdx.x];
+    i = m->ids_i[blockIdx.x];
     j = offset_j + threadIdx.x;
     ij = m->ids_j[threadIdx.x];
 
 
-    if (p->min_i > i || i > p->max_i) goto sum;
-    if (p->min_j > j || j > p->max_j) goto sum;
-    if (ij != -1) goto sum;
+    if (p->min_i > i || i > p->max_i) goto next;
+    if (p->min_j > j || j > p->max_j) goto next;
+    if (ij != -1) goto next;
 
     val = m->stack[threadIdx.x << 10 | blockIdx.x];
 

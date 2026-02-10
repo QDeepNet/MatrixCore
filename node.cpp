@@ -5,6 +5,8 @@ node_t *node_init() {
     const auto node = static_cast<node_t *>(malloc(sizeof(node_t)));
 
     node->type = AST_Type_None;
+    node->number = 0;
+    node->symbol = 0;
 
     token_plist_init(&node->tokens);
     node_plist_init(&node->nodes);
@@ -14,6 +16,8 @@ node_t *node_init() {
 void node_clear(node_t *node) {
     if (node == nullptr) return;
     node->type = AST_Type_None;
+    node->number = 0;
+    node->symbol = 0;
 
     token_plist_clear(&node->tokens);
     node_plist_clear(&node->nodes);
@@ -31,6 +35,8 @@ void node_set(node_t *node, const node_t *src) {
     if (node == nullptr) return;
     if (src == nullptr) return node_clear(node);
     node->type = src->type;
+    node->number = src->number;
+    node->symbol = src->symbol;
 
     token_plist_set(&node->tokens, &src->tokens);
     node_plist_set(&node->nodes, &src->nodes);

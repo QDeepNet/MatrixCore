@@ -12,9 +12,11 @@
 #define AST_Type_Power          0x05
 #define AST_Type_Sum            0x06
 #define AST_Type_Implicit       0x07
-#define AST_Type_Multiplication 0x08
-#define AST_Type_Addition       0x09
-#define AST_Type_Compare        0x0a
+#define AST_Type_Negative       0x08
+#define AST_Type_Multiplication 0x09
+#define AST_Type_Division       0x0a
+#define AST_Type_Addition       0x0b
+#define AST_Type_Compare        0x0c
 
 
 typedef struct {
@@ -25,6 +27,8 @@ typedef struct {
 
 typedef struct node_st {
     uint16_t type;
+    int64_t number;
+    uint8_t symbol;
 
     token_list_t tokens;
     node_list_t nodes;

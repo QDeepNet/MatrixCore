@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include "bytecode.h"
 
 
 typedef struct {
     int64_t n;
-    int64_t offset_i;
     int64_t offset_j;
 } device_data_t;
 

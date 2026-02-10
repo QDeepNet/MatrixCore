@@ -27,11 +27,11 @@
 #define Special_None        0x00
 
 // Special Chars OP
-#define Special_MOD         0x11 // %
+#define Special_ADD         0x10 // +
+#define Special_SUB         0x11 // -
 #define Special_MUL         0x12 // *
-#define Special_ADD         0x13 // +
-#define Special_SUB         0x14 // -
-#define Special_DIV         0x15 // /
+#define Special_DIV         0x13 // /
+#define Special_MOD         0x14 // %
 
 // Special Chars Brackets
 #define Special_LSB         0x31 // (

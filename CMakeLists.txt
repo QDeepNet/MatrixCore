@@ -23,4 +23,7 @@ add_executable(MatrixCore main.cpp
         token.cpp
         node.cpp
         error.cpp
+        interpreter.cpp
+        bytecode.h
+        bytecode.cpp
 )

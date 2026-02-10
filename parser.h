@@ -34,5 +34,6 @@ typedef struct {
 
 void parser_tokenize(parser_t *parser);
 void parser_parse_ast(parser_t *parser);
+void parser_interpret(const parser_t *parser);
 
 #endif //MATRIXCORE_PARSER_H
