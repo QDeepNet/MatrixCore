@@ -107,6 +107,14 @@ void node_list_addend(node_list_t *list, node_t *node) {
     node_list_resize(list, len + 1);
     list->nodes[len] = node;
 }
+void node_list_delete(node_list_t *list, uint64_t id) {
+    if (list == nullptr || id >= list->len) return;
+
+    node_free(list->nodes[id]);
+    list->nodes[id] = list->nodes[list->len - 1];
+    list->nodes[list->len - 1] = nullptr;
+    node_list_resize(list, list->len - 1);
+}
 void node_list_pop(node_list_t *list) {
     if (list == nullptr) return;
     const uint64_t len = list->len - 1;

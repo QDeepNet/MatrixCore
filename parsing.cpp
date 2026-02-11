@@ -60,25 +60,6 @@ typedef struct {
     uint64_t pos;
 } node_parser_t;
 
-int64_t pow(int64_t a, int64_t e) {
-    int64_t res = 1;
-
-    while (e > 0) {
-        if (e & 1) res *= a;
-        a *= a;
-        e >>= 1;
-    }
-
-    return res;
-}
-int64_t gcd(int64_t a, int64_t b) {
-    while (b) {
-        a %= b;
-        std::swap(a, b);
-    }
-    return a;
-}
-
 uint8_t numb_expr(node_parser_t *parser, node_t *expr) {
     parser_end return SN_Nothing;
 
@@ -107,7 +88,6 @@ uint8_t iden_expr(node_parser_t *parser, node_t *expr) {
     return SN_Success;
 }
 
-uint8_t rule_expr(node_parser_t *parser, node_t *expr);
 uint8_t negt_expr(node_parser_t *parser, node_t *expr);
 uint8_t math_expr(node_parser_t *parser, node_t *expr);
 
@@ -211,8 +191,15 @@ uint8_t sums_expr(node_parser_t *parser, node_t *expr) {
     if (token->type != TokenType_Special || token->sub_type != Special_LCB) goto err;
     parser->pos++;
 
-    expr_cast
-    check_call(rule_expr(parser, expr_next)) goto err;
+    check_call(iden_expr(parser, expr)) goto err;
+
+    parser_end goto end;
+    parser_get;
+    if (token->type != TokenType_Special || token->sub_type != Special_EQ) goto err;
+    parser->pos++;
+
+    expr_add
+    check_call(math_expr(parser, expr_next)) goto err;
 
     parser_end goto err;
     parser_get;
@@ -291,8 +278,6 @@ uint8_t negt_expr(node_parser_t *parser, node_t *expr) {
 }
 
 
-
-
 int8_t expr_priority(const uint16_t sub_type) {
     switch (sub_type) {
         case Special_MUL:
@@ -332,6 +317,8 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
             node_list_addend(&prev->nodes, expr_next);
 
             prev->type = AST_Type_Multiplication + priority;
+            prev->operation = expr_next->operation;
+            expr_next->operation = AST_Operation_Positive;
 
             ++stack_pos;
             node[stack_pos] = prev;
@@ -350,27 +337,6 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
     result = SN_Success;
     analyze_end
 }
-uint8_t rule_expr(node_parser_t *parser, node_t *expr) {
-    analyze_start
-
-    expr_cast
-    check_call(iden_expr(parser, expr_next)) goto err;
-
-
-    parser_end goto end;
-    parser_get;
-    if (token->type != TokenType_Special || token->sub_type != Special_EQ) goto err;
-    parser->pos++;
-
-    expr_add
-    check_call(math_expr(parser, expr_next)) goto err;
-
-    expr->type = AST_Type_Compare;
-    result = SN_Success;
-
-    analyze_end
-}
-
 
 void parser_parse_ast(parser_t *parser) {
     if (parser == nullptr) return;
