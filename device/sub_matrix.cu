@@ -62,6 +62,9 @@ __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
 }
 
 
+__device__ void __constructor_neg(device_matrix_t *m) {
+    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= -1;
+}
 __device__ void __constructor_add(device_matrix_t *m) {
     m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] += m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
     if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
@@ -100,8 +103,9 @@ __device__ void __constructor_pow(device_matrix_t *m) {
 
 __global__  void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
     for (uint64_t i = 0; i < size;) {
-
         switch (list[i++]) {
+            case NEG:
+                __constructor_neg(m); break;
             case ADD:
                 __constructor_add(m); break;
             case SUB:

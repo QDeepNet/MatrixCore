@@ -1,51 +1,42 @@
-// #ifndef MATRIXCORE_MATRIX_H
-// #define MATRIXCORE_MATRIX_H
-// #include <stdint.h>
-// #include <stdlib.h>
-//
-// typedef struct {
-//     uint64_t n;
-//     uint64_t *data; // something like this [][]
-// } matrix_t;
-//
-// typedef struct {
-//     uint64_t n;
-//     uint64_t *indexes;
-//     uint64_t *data;
-// } submatrix_t;
-//
-//
-//
-//
-// static __inline__ matrix_t *matrix_init() {
-//     matrix_t *matrix = malloc(sizeof(matrix_t));
-//
-//     matrix->n = 0;
-//     matrix->data = NULL;
-//     return matrix;
-// }
-// static __inline__ void matrix_clear(matrix_t *matrix) {
-//     if (matrix == NULL) return;
-//
-//     if (matrix->data) free(matrix->data);
-//     matrix->n = 0;
-//     matrix->data = NULL;
-// }
-// static __inline__ void matrix_free(matrix_t *matrix) {
-//     if (matrix == NULL) return;
-//
-//     if (matrix->data) free(matrix->data);
-//     matrix->n = 0;
-//     matrix->data = NULL;
-//
-//     free(matrix);
-// }
-//
-// static __inline__ void matrix_set(matrix_t *matrix, uint64_t n) {
-//     if (matrix == NULL) return;
-//     if (matrix->data) free(matrix->data);
-//     matrix->n = n;
-//     matrix->data = realloc(matrix->data, sizeof(uint64_t) * n * n);
-// }
-//
-// #endif //MATRIXCORE_MATRIX_H
+#include <cstdint>
+#include <cstdlib>
+
+typedef struct {
+    uint32_t total_spins; // total_number of spins in the matrix (M)
+    uint32_t block_spins; // Number of spins inside each block (max, this mean at most) (x)
+    uint32_t block_count; // Number of Block (Sub Qubo) (N)
+
+    uint32_t candidates; // Number of candidates for Block (k)
+
+    uint32_t *block_ids; // (blocks)
+
+} data_t;
+
+
+__inline__ void data_init(data_t *data) {
+    data->total_spins = 0;
+    data->block_spins = 0;
+    data->block_count = 0;
+}
+__inline__ void data_clear(data_t *data) {
+    data->total_spins = 0;
+    data->block_spins = 0;
+    data->block_count = 0;
+
+    if (data->block_ids) free(data->block_ids);
+    data->block_ids = nullptr;
+
+}
+__inline__ void data_free(data_t *data) {
+
+}
+
+
+__inline__ data_set(data_t *data, uint64_t total_spins, uint64_t block_spins) {
+    data_clear(data);
+    data->total_spins = total_spins;
+    data->block_spins = block_spins;
+    data->block_count = (total_spins + block_spins - 1) / block_spins;
+
+    data->block_ids = static_cast<uint32_t *>(malloc(sizeof(uint32_t) * data->block_count * data->block_spins));
+}

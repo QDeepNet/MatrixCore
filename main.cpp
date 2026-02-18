@@ -1,9 +1,12 @@
-#include "parser.h"
+#include <iostream>
+#include <random>
+
+#include "parser/parser.h"
 
 
 #include <stdio.h>
 
-#include "bytecode.h"
+#include "parser/bytecode.h"
 
 
 #define PRINT_PREF for(int _i = 0; _i < size; _i++) printf("%c", prefix[_i]);
@@ -479,20 +482,47 @@ void optimize(parser_t* parser) {
     }
 }
 
+#include "solver/cpu_adapter.cpp"
+#include "solver/cfc.h"
+
 int main(void) {
-    parser_t parser = {};
-    // const char *data = "\\sum_{i=0}^N \\sum_{i=0}^N (i+j + 10 + 1)q_iq_j";
-    // const char *data = "\\sum_{i=0}^{N-1} (i + 100) 10 q_i";
-    const char *data = "a + 10 - (a - 10)";
-    parser.data = (uint8_t *)data;
-    parser.size = strlen(data);
+    // parser_t parser = {};
+    // // const char *data = "\\sum_{i=0}^N \\sum_{i=0}^N (i+j + 10 + 1)q_iq_j";
+    // // const char *data = "\\sum_{i=0}^{N-1} (i + 100) 10 q_i";
+    // const char *data = "a + 10 - (a - 10)";
+    // parser.data = (uint8_t *)data;
+    // parser.size = strlen(data);
+    //
+    // parser_tokenize(&parser);
+    // parser_parse_ast(&parser);
+    // print_node(&parser.ast);
+    // optimize(&parser);
+    //
+    // // print_token_list(&parser.tokens);
+    //
+    // print_node(&parser.ast);
 
-    parser_tokenize(&parser);
-    parser_parse_ast(&parser);
-    print_node(&parser.ast);
-    optimize(&parser);
+    int N=6;
+    int B=1;
+    int n_iter=1000;
 
-    // print_token_list(&parser.tokens);
+    float Jraw[36]={
+        0,-1, 1, 0, 1,-1,
+       -1, 0,-1, 1, 0, 1,
+        1,-1, 0,-1, 1, 0,
+        0, 1,-1, 0,-1, 1,
+        1, 0, 1,-1, 0,-1,
+       -1, 1, 0, 1,-1, 0
+   };
 
-    print_node(&parser.ast);
+    std::vector<float> J(Jraw,Jraw+36);
+
+    CPUAdapter cpu;
+
+    CFC solver(N,B,n_iter,J,&cpu);
+    solver.run();
+
+    std::cout<<"Spins:\n";
+    for(int i=0;i<N;i++)
+        std::cout<<(solver.x[i]>=0?1:-1)<<" ";
 }

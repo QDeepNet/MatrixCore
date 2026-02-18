@@ -3,12 +3,12 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "bytecode.h"
+#include "../parser/bytecode.h"
 
 
 typedef struct {
-    int64_t n;
-    int64_t offset_j;
+    int32_t n;
+    int32_t offset_j;
 } device_data_t;
 
 
@@ -26,11 +26,11 @@ typedef struct {
 
 typedef uint8_t device_instruction;
 typedef struct {
-    int64_t min_i;
-    int64_t max_i;
+    int32_t min_i;
+    int32_t max_i;
 
-    int64_t min_j;
-    int64_t max_j;
+    int32_t min_j;
+    int32_t max_j;
 } instruction_params_t;
 
 __global__  void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, uint64_t size);

@@ -8,23 +8,33 @@ set(CMAKE_CUDA_STANDARD 17)
 set(CUDAToolkit_ROOT "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v13.1")
 
 add_executable(MatrixCore main.cpp
-        token.h
-        tokenize.cpp
-        parser.h
-        parser-utils.h
-        error.h
-        node.h
-        parsing.cpp
+        parser/token.h
+        parser/tokenize.cpp
+        parser/parser.h
+        parser/parser-utils.h
+        parser/error.h
+        parser/node.h
+        parser/parsing.cpp
         matrix.h
-        sub_matrix.cu
+        device/sub_matrix.cu
 #        sub_matrix.cuh
 #        sub_matrix.cuh
-        parser-utils.cpp
-        token.cpp
-        node.cpp
-        error.cpp
-        interpreter.cpp
-        bytecode.h
-        bytecode.cpp
-        optimizer.cpp
+        parser/parser-utils.cpp
+        parser/token.cpp
+        parser/node.cpp
+        parser/error.cpp
+        parser/interpreter.cpp
+        parser/bytecode.h
+        parser/bytecode.cpp
+        parser/optimizer.cpp
+        solver/cfc.h
+        solver/adapter.h
+        solver/cpu_adapter.cpp
+        solver/gpu_adapter.cu
+        device/sub_matrix.cuh
 )
+
+# 1. Function for computation the total energy of the vector
+# 2. Understand the all computations in the Ipynb
+
+# 3. Make the graph like construction
