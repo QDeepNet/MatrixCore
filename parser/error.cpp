@@ -6,21 +6,19 @@
 void error_init(error_t *error) {
     if (error == nullptr) return;
     error->msg = "";
-
-    parser_line_init(&error->line);
+    error->line = {};
     error->present = 0;
 }
 void error_clear(error_t *error) {
     if (error == nullptr) return;
     error->msg = "";
-
-    parser_line_init(&error->line);
+    error->line = {};
     error->present = 0;
 }
 void error_free(error_t *error) {
     if (error == nullptr) return;
     error->msg = "";
-
+    error->line = {};
     error->present = 0;
 }
 

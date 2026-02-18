@@ -217,9 +217,9 @@ void parser_tokenize(parser_t *parser) {
 
     token_parser_t tparser;
 
-    parser_data_init(&tparser.data);
-    parser_line_init(&tparser.line);
-    parser_nest_init(&tparser.nest);
+    tparser.data = {};
+    tparser.line = {};
+    tparser.nest = {};
     error_init(&tparser.error);
 
     parser_data_set(&tparser.data, parser->data, parser->size);

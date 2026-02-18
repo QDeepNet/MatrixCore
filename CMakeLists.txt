@@ -19,7 +19,6 @@ add_executable(MatrixCore main.cpp
         device/sub_matrix.cu
 #        sub_matrix.cuh
 #        sub_matrix.cuh
-        parser/parser-utils.cpp
         parser/token.cpp
         parser/node.cpp
         parser/error.cpp

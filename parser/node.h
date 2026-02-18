@@ -34,6 +34,7 @@ typedef struct node_st {
     int64_t limit_min;
     int64_t limit_max;
 
+    parser_line_t line;
     node_list_t nodes;
 } node_t;
 

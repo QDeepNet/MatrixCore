@@ -6,8 +6,9 @@ token_t *token_init() {
     token->type = TokenType_None;
     token->sub_type = TokenType_None;
 
-    parser_data_init(&token->data);
-    parser_line_init(&token->line);
+    token->data = {};
+    token->line = {};
+
     return token;
 }
 void token_clear(token_t *token) {
@@ -15,8 +16,8 @@ void token_clear(token_t *token) {
     token->type = TokenType_None;
     token->sub_type = TokenType_None;
 
-    parser_data_init(&token->data);
-    parser_line_init(&token->line);
+    token->data = {};
+    token->line = {};
 }
 void token_free(token_t *token) {
     if (token == nullptr) return;

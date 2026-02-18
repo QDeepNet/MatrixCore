@@ -1,6 +1,5 @@
 #include "parser.h"
 
-
 int64_t gcd(int64_t a, int64_t b) {
     a = a < 0 ? -a : a;
     b = b < 0 ? -b : b;
@@ -10,7 +9,6 @@ int64_t gcd(int64_t a, int64_t b) {
     }
     return a;
 }
-
 int64_t pow(int64_t a, int64_t e) {
     int64_t res = 1;
 
@@ -23,8 +21,8 @@ int64_t pow(int64_t a, int64_t e) {
     return res;
 }
 
-void parser_optimizer(parser_t *parser) {
-    if (parser == nullptr) return;
+void optimize_node(node_t *root, const char symbol, const int64_t value) {
+    if (root == nullptr) return;
 
     node_list_t stack1;
     node_list_t stack2;
@@ -32,7 +30,7 @@ void parser_optimizer(parser_t *parser) {
     node_plist_init(&stack1);
     node_plist_init(&stack2);
 
-    node_plist_addend(&stack1, &parser->ast);
+    node_plist_addend(&stack1, root);
 
     while (stack1.len) {
         node_t *node = stack1.nodes[stack1.len - 1];
@@ -49,10 +47,10 @@ void parser_optimizer(parser_t *parser) {
         node_plist_pop(&stack2);
 
         const uint8_t operation = node->operation;
-        if (node->type == AST_Type_Identifier && node->symbol == 'N') {
+        if (node->type == AST_Type_Identifier && node->symbol == symbol) {
             node_clear(node);
             node->type = AST_Type_Number;
-            node->number = parser->N;
+            node->number = value;
             node->operation = operation;
             continue;
         }
@@ -84,22 +82,6 @@ void parser_optimizer(parser_t *parser) {
             node->type = AST_Type_Number;
             node->number = num;
             node->operation = operation;
-        }
-
-        if (node->type == AST_Type_Sum) {
-
-            const node_t *subnode1 = node->nodes.nodes[0];
-            const node_t *subnode2 = node->nodes.nodes[1];
-
-            if (subnode1->type != AST_Type_Number || subnode2->type != AST_Type_Number) {
-                // error;
-            }
-
-            node->limit_min = subnode1->number;
-            node->limit_max = subnode2->number;
-
-            node_list_delete(&node->nodes, 0);
-            node_list_delete(&node->nodes, 2);
         }
 
         // case : + (+) or * (*)
@@ -160,4 +142,8 @@ void parser_optimizer(parser_t *parser) {
             }
         }
     }
+}
+void parser_optimizer(parser_t *parser) {
+    if (parser == nullptr) return;
+    optimize_node(parser->ast, 'N', parser->N);
 }

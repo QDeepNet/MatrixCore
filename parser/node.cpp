@@ -8,6 +8,7 @@ node_t *node_init() {
     node->number = 0;
     node->symbol = 0;
     node->operation = 0;
+    node->line = {};
 
     node_list_init(&node->nodes);
 
@@ -19,9 +20,9 @@ void node_clear(node_t *node) {
     node->number = 0;
     node->symbol = 0;
     node->operation = 0;
+    node->line = {};
 
     node_list_clear(&node->nodes);
-
 }
 void node_free(node_t *node) {
     if (node == nullptr) return;
@@ -37,11 +38,13 @@ void node_move(node_t *node, node_t *src) {
     node->number = src->number;
     node->symbol = src->symbol;
     node->operation = src->operation;
+    node->line = src->line;
 
     src->type = AST_Type_None;
     src->number = 0;
     src->symbol = 0;
     src->operation = 0;
+    node->line = {};
 
     node_list_move(&node->nodes, &src->nodes);
 }

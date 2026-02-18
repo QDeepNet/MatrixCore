@@ -69,6 +69,7 @@ uint8_t numb_expr(node_parser_t *parser, node_t *expr) {
 
     expr->type = AST_Type_Number;
     expr->number = 0;
+    expr->line = token->line;
     for (uint32_t i = 0; i < token->data.size; i++) {
         expr->number *= 10;
         expr->number += token->data.data[i] - '0';
@@ -84,6 +85,7 @@ uint8_t iden_expr(node_parser_t *parser, node_t *expr) {
 
     expr->type = AST_Type_Identifier;
     expr->symbol = token->data.data[0];
+    expr->line = token->line;
 
     return SN_Success;
 }
@@ -179,6 +181,7 @@ uint8_t sums_expr(node_parser_t *parser, node_t *expr) {
     parser_get;
     if (token->type != TokenType_Command || token->sub_type != Command_SUM) goto end;
     parser->pos++;
+    parser_line_t line = token->line;
 
 
     parser_end goto err;
@@ -219,6 +222,7 @@ uint8_t sums_expr(node_parser_t *parser, node_t *expr) {
 
     expr->type = AST_Type_Sum;
     result = SN_Success;
+    expr->line = line;
 
     analyze_end
 }
@@ -340,15 +344,15 @@ uint8_t math_expr(node_parser_t *parser, node_t *expr) {
 
 void parser_parse_ast(parser_t *parser) {
     if (parser == nullptr) return;
-    node_clear(&parser->ast);
+    node_clear(parser->ast);
 
     node_parser_t ast_parser;
     ast_parser.tokens = parser->tokens;
     ast_parser.pos = 0;
 
     error_init(&ast_parser.error);
-    if (math_expr(&ast_parser, &parser->ast) != SN_Success) {
-        node_clear(&parser->ast);
+    if (math_expr(&ast_parser, parser->ast) != SN_Success) {
+        node_clear(parser->ast);
         error_set(&parser->error, &ast_parser.error);
     }
 
