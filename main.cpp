@@ -228,8 +228,6 @@ static void print_bytecode__(const bytecode_t *bytecode, const uint64_t size) {
                 case SET_QJ:
                     printf("SET QJ\n"); break;
 
-                case PUT:
-                    printf("PUT\n"); break;
                 default:
                     printf("\n"); break;
             }

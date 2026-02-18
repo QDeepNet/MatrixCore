@@ -16,8 +16,6 @@
 #define SET_J   0x12
 #define SET_QJ  0x13
 
-#define PUT     0x20
-
 typedef struct {
     uint8_t *data;
     uint64_t len;

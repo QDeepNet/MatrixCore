@@ -30,8 +30,11 @@ add_executable(MatrixCore main.cpp
         solver/cfc.h
         solver/adapter.h
         solver/cpu_adapter.cpp
+        device/device_matrix.cuh
         solver/gpu_adapter.cu
         device/sub_matrix.cuh
+        device/device_constructor.cuh
+        device/device_instruction.cuh
 )
 
 # 1. Function for computation the total energy of the vector

@@ -1,37 +1,38 @@
 #include <cuda_runtime.h>
 #include "sub_matrix.cuh"
+#include "../parser/bytecode.h"
 
 
-__device__ void __constructor_set_const(device_matrix_t *m, const int64_t value) {
-    m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = value;
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
+__device__ void __constructor_set_const(const device_constructor_t *c, const int64_t value) {
+    c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x] = value;
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_set_value_i(device_matrix_t *m) {
-    m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = m->ids_i[threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
+__device__ void __constructor_set_value_i(const device_constructor_t *c, const device_matrix_t *m) {
+    c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x] = m->ids_i[threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_set_value_j(device_matrix_t *m) {
-    m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = m->data->offset_j + blockIdx.x;
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
+__device__ void __constructor_set_value_j(const device_constructor_t *c) {
+    c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x] = c->offset_j[0] + blockIdx.x;
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_set_value_qj(device_matrix_t *m) {
-    m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x] = m->q_j[blockIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(m->top, 1);
+__device__ void __constructor_set_value_qj(const device_constructor_t *c) {
+    c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x] = c->q_j[blockIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicAdd(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
+__device__ void __constructor_put(const device_constructor_t *c, const device_matrix_t *m, instruction_params_t *p) {
     int64_t val = 0;
-    int64_t offset_j = m->data->offset_j;
+    int64_t offset_j = c->offset_j[0];
     __shared__ int64_t values[1024];
 
     int64_t i  = m->ids_i[threadIdx.x];
     int64_t j  = offset_j + blockIdx.x;
-    int64_t ij = m->ids_j[blockIdx.x];
+    int64_t ij = c->ids_j[blockIdx.x];
 
     if (p->min_i > i || i > p->max_i) goto sum;
     if (p->min_j > j || j > p->max_j) goto sum;
     if (ij == -1) goto sum;
 
-    atomicAdd((unsigned long long *)m->matrix + m->data->n * ij + threadIdx.x, m->stack[blockIdx.x << 10 | threadIdx.x]);
+    atomicAdd(reinterpret_cast<unsigned long long *>(m->matrix) + m->n[0] * ij + threadIdx.x, c->stack[blockIdx.x << 10 | threadIdx.x]);
 
     sum:
     __syncthreads();
@@ -39,14 +40,14 @@ __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
 
     i = m->ids_i[blockIdx.x];
     j = offset_j + threadIdx.x;
-    ij = m->ids_j[threadIdx.x];
+    ij = c->ids_j[threadIdx.x];
 
 
     if (p->min_i > i || i > p->max_i) goto next;
     if (p->min_j > j || j > p->max_j) goto next;
     if (ij != -1) goto next;
 
-    val = m->stack[threadIdx.x << 10 | blockIdx.x];
+    val = c->stack[threadIdx.x << 10 | blockIdx.x];
 
     next:
     values[threadIdx.x] = val;
@@ -58,37 +59,37 @@ __device__ void __constructor_put(device_matrix_t *m, instruction_params_t *p) {
     }
 
     if (threadIdx.x == 0)
-        atomicAdd((unsigned long long *)m->matrix + m->data->n * threadIdx.x + threadIdx.x, values[0]);
+        atomicAdd(reinterpret_cast<unsigned long long *>(m->matrix) + m->n[0] * threadIdx.x + threadIdx.x, values[0]);
 }
 
 
-__device__ void __constructor_neg(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= -1;
+__device__ void __constructor_neg(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= -1;
 }
-__device__ void __constructor_add(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] += m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+__device__ void __constructor_add(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] += c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_sub(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] -= m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+__device__ void __constructor_sub(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] -= c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_mul(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+__device__ void __constructor_mul(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_div(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] /= m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+__device__ void __constructor_div(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] /= c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_mod(device_matrix_t *m) {
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] %= m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+__device__ void __constructor_mod(const device_constructor_t *c) {
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] %= c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
-__device__ void __constructor_pow(device_matrix_t *m) {
+__device__ void __constructor_pow(const device_constructor_t *c) {
     int64_t res = 1;
-    int64_t a = m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x];
-    int64_t e = m->stack[(m->top[0] << 10 | blockIdx.x) << 10 | threadIdx.x];
+    int64_t a = c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x];
+    int64_t e = c->stack[(c->stack_top[blockIdx.x] << 10 | blockIdx.x) << 10 | threadIdx.x];
 
     while (e > 0) {
         if (e & 1) res *= a;
@@ -96,45 +97,46 @@ __device__ void __constructor_pow(device_matrix_t *m) {
         e /= 2;
     }
 
-    m->stack[((m->top[0] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] = res;
-    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(m->top, 1);
+    c->stack[((c->stack_top[blockIdx.x] - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] = res;
+    if (threadIdx.x == 0 && blockIdx.x == 0) atomicSub(c->stack_top + blockIdx.x, 1);
 }
 
 
-__global__  void __constructor_interpreter(device_matrix_t *m, instruction_params_t *p, device_instruction *list, const uint64_t size) {
-    for (uint64_t i = 0; i < size;) {
-        switch (list[i++]) {
+__global__  void __constructor_interpreter(const device_constructor_t *c, const device_matrix_t *m, const device_instruction_t *i) {
+    for (uint64_t _i = 0; _i < i->params->size;) {
+        switch (i->instructions[_i++]) {
             case NEG:
-                __constructor_neg(m); break;
+                __constructor_neg(c); break;
             case ADD:
-                __constructor_add(m); break;
+                __constructor_add(c); break;
             case SUB:
-                __constructor_sub(m); break;
+                __constructor_sub(c); break;
             case MUL:
-                __constructor_mul(m); break;
+                __constructor_mul(c); break;
             case DIV:
-                __constructor_div(m); break;
+                __constructor_div(c); break;
             case MOD:
-                __constructor_mod(m); break;
+                __constructor_mod(c); break;
             case POW:
-                __constructor_pow(m); break;
+                __constructor_pow(c); break;
 
             case SET:
-                __constructor_set_const(m, ((uint64_t *)(list + i))[0]);
-                i += 8;
+                __constructor_set_const(c, ((uint64_t *)(i->instructions + _i))[0]);
+                _i += 8;
                 break;
             case SET_I:
-                __constructor_set_value_i(m);break;
+                __constructor_set_value_i(c, m);break;
             case SET_J:
-                __constructor_set_value_j(m);break;
+                __constructor_set_value_j(c);break;
             case SET_QJ:
-                __constructor_set_value_qj(m);break;
+                __constructor_set_value_qj(c);break;
 
-            case PUT:
-                __constructor_put(m, p); break;
             default: break;
         }
     }
+
+
+    __constructor_put(c, m, i->params);
 }
 
 // add(r1, a1, a2);
