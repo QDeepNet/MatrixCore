@@ -31,6 +31,9 @@ typedef struct node_st {
     uint8_t symbol;
     uint8_t operation;
 
+    int64_t limit_min;
+    int64_t limit_max;
+
     node_list_t nodes;
 } node_t;
 

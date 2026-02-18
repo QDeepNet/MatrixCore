@@ -35,6 +35,8 @@ add_executable(MatrixCore main.cpp
         device/sub_matrix.cuh
         device/device_constructor.cuh
         device/device_instruction.cuh
+        device/ising_converter.cuh
+        device/ising_converter.cu
 )
 
 # 1. Function for computation the total energy of the vector

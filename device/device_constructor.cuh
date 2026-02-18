@@ -11,7 +11,7 @@ typedef struct {
 
     int32_t *offset_j;
     int64_t *ids_j; // sub qubo indexes
-    int64_t *q_j;
+    int64_t *q_j; // spins of the j variable (1 if included in subqubo)
 } device_constructor_t;
 
 

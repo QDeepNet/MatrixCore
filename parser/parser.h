@@ -13,6 +13,8 @@ typedef struct {
     node_t ast;
     error_t error;
 
+    uint64_t N;
+
 
 
     //     struct node_list_st nodes;
@@ -34,6 +36,7 @@ typedef struct {
 
 void parser_tokenize(parser_t *parser);
 void parser_parse_ast(parser_t *parser);
+void parser_optimizer(parser_t *parser);
 void parser_interpret(const parser_t *parser);
 
 #endif //MATRIXCORE_PARSER_H

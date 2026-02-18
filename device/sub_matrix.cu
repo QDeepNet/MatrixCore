@@ -32,7 +32,7 @@ __device__ void __constructor_put(const device_constructor_t *c, const device_ma
     if (p->min_j > j || j > p->max_j) goto sum;
     if (ij == -1) goto sum;
 
-    atomicAdd(reinterpret_cast<unsigned long long *>(m->matrix) + m->n[0] * ij + threadIdx.x, c->stack[blockIdx.x << 10 | threadIdx.x]);
+    atomicAdd(reinterpret_cast<unsigned long long *>(m->Q) + m->n[0] * ij + threadIdx.x, c->stack[blockIdx.x << 10 | threadIdx.x]);
 
     sum:
     __syncthreads();
@@ -58,8 +58,9 @@ __device__ void __constructor_put(const device_constructor_t *c, const device_ma
         __syncthreads();
     }
 
+    __syncthreads();
     if (threadIdx.x == 0)
-        atomicAdd(reinterpret_cast<unsigned long long *>(m->matrix) + m->n[0] * threadIdx.x + threadIdx.x, values[0]);
+        atomicAdd(reinterpret_cast<unsigned long long *>(m->Q) + m->n[0] * threadIdx.x + threadIdx.x, values[0]);
 }
 
 
