@@ -6,10 +6,11 @@
 #define NEG 0x01
 #define ADD 0x02
 #define SUB 0x03
-#define MUL 0x04
-#define DIV 0x05
-#define MOD 0x06
-#define POW 0x07
+#define NMl 0x04
+#define MUL 0x05
+#define DIV 0x06
+#define MOD 0x07
+#define POW 0x08
 
 #define SET     0x10
 #define SET_I   0x11

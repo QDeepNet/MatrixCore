@@ -148,31 +148,31 @@ void parser_optimizer(parser_t *parser) {
     if (parser == nullptr) return;
     optimize_node(parser->ast, 'N', parser->N);
 
-    node_t *stack1[256];
-    uint16_t len1 = 0;
-    uint8_t stackm[256];
-
-    stackm[len1] = 0;
-    stack1[len1++] = parser->ast;
-    while (len1) {
-        node_t *node = stack1[--len1];
-        uint16_t mark = stackm[len1];
-
-        if (node->type == AST_Type_Addition && !(mark & 1)) {
-            for (uint64_t i = 0; i < node->nodes.len; i++) {
-                if (node->nodes.nodes[i]->mark) {
-                    stackm[len1] = mark;
-                    stack1[len1++] = node->nodes.nodes[i];
-                } else {
-                    node_list_delete(&node->nodes, i);
-                    i--;
-                }
-            }
-        } else {
-            for (uint64_t i = 0; i < node->nodes.len; i++) {
-                stackm[len1] = node->mark | mark;
-                stack1[len1++] = node->nodes.nodes[i];
-            }
-        }
-    }
+    // node_t *stack1[256];
+    // uint16_t len1 = 0;
+    // uint8_t stackm[256];
+    //
+    // stackm[len1] = 0;
+    // stack1[len1++] = parser->ast;
+    // while (len1) {
+    //     node_t *node = stack1[--len1];
+    //     uint16_t mark = stackm[len1];
+    //
+    //     if (node->type == AST_Type_Addition && !(mark & 1)) {
+    //         for (uint64_t i = 0; i < node->nodes.len; i++) {
+    //             if (node->nodes.nodes[i]->mark) {
+    //                 stackm[len1] = mark;
+    //                 stack1[len1++] = node->nodes.nodes[i];
+    //             } else {
+    //                 node_list_delete(&node->nodes, i);
+    //                 i--;
+    //             }
+    //         }
+    //     } else {
+    //         for (uint64_t i = 0; i < node->nodes.len; i++) {
+    //             stackm[len1] = node->mark | mark;
+    //             stack1[len1++] = node->nodes.nodes[i];
+    //         }
+    //     }
+    // }
 }
