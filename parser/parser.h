@@ -34,7 +34,7 @@ typedef struct {
 } parser_t;
 
 
-void optimize_node(node_t *root, char symbol, int64_t value);
+uint8_t optimize_node(node_t *root, char symbol, int64_t value);
 void parser_tokenize(parser_t *parser);
 void parser_parse_ast(parser_t *parser);
 void parser_optimizer(parser_t *parser);

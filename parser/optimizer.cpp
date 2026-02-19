@@ -21,40 +21,36 @@ int64_t pow(int64_t a, int64_t e) {
     return res;
 }
 
-void optimize_node(node_t *root, const char symbol, const int64_t value) {
-    if (root == nullptr) return;
+uint8_t optimize_node(node_t *root, const char symbol, const int64_t value) {
+    if (root == nullptr) return 0;
+    uint8_t res = 0;
 
-    node_list_t stack1;
-    node_list_t stack2;
+    node_t *stack1[256];
+    node_t *stack2[256];
+    uint16_t len1 = 0;
+    uint16_t len2 = 0;
 
-    node_plist_init(&stack1);
-    node_plist_init(&stack2);
-
-    node_plist_addend(&stack1, root);
-
-    while (stack1.len) {
-        node_t *node = stack1.nodes[stack1.len - 1];
-        node_plist_addend(&stack2, node);
-        node_plist_pop(&stack1);
+    stack1[len1++] = root;
+    while (len1) {
+        node_t *node = stack1[--len1];
+        stack2[len2++] = node;
 
         for (uint64_t i = 0; i < node->nodes.len; i++)
-            node_plist_addend(&stack1, node->nodes.nodes[i]);
+            stack1[len1++] = node->nodes.nodes[i];
     }
 
-
-    while (stack2.len) {
-        node_t *node = stack2.nodes[stack2.len - 1];
-        node_plist_pop(&stack2);
+    while (len2) {
+        node_t *node = stack2[--len2];
 
         const uint8_t operation = node->operation;
+        if (node->type == AST_Type_QBit) node->mark = 1;
         if (node->type == AST_Type_Identifier && node->symbol == symbol) {
             node_clear(node);
             node->type = AST_Type_Number;
             node->number = value;
             node->operation = operation;
-            continue;
+            res = 1;
         }
-
         if (node->type == AST_Type_Negative) {
             node_t *subnode = node->nodes.nodes[0];
             if (subnode->type == AST_Type_Negative) {
@@ -68,7 +64,6 @@ void optimize_node(node_t *root, const char symbol, const int64_t value) {
                 node->number = -num;
             }
             node->operation = operation;
-            continue;
         }
         if (node->type == AST_Type_Power) {
             const node_t *subnode1 = node->nodes.nodes[0];
@@ -83,6 +78,11 @@ void optimize_node(node_t *root, const char symbol, const int64_t value) {
             node->number = num;
             node->operation = operation;
         }
+
+        for (uint64_t i = 0; i < node->nodes.len; i++)
+            node->mark |= node->nodes.nodes[i]->mark;
+        if (node->type == AST_Type_Addition)
+            node->mark = (node->mark? 1 : 0) << 1;
 
         // case : + (+) or * (*)
         if (node->type != AST_Type_Addition && node->type != AST_Type_Multiplication) continue;
@@ -142,8 +142,37 @@ void optimize_node(node_t *root, const char symbol, const int64_t value) {
             }
         }
     }
+    return res;
 }
 void parser_optimizer(parser_t *parser) {
     if (parser == nullptr) return;
     optimize_node(parser->ast, 'N', parser->N);
+
+    node_t *stack1[256];
+    uint16_t len1 = 0;
+    uint8_t stackm[256];
+
+    stackm[len1] = 0;
+    stack1[len1++] = parser->ast;
+    while (len1) {
+        node_t *node = stack1[--len1];
+        uint16_t mark = stackm[len1];
+
+        if (node->type == AST_Type_Addition && !(mark & 1)) {
+            for (uint64_t i = 0; i < node->nodes.len; i++) {
+                if (node->nodes.nodes[i]->mark) {
+                    stackm[len1] = mark;
+                    stack1[len1++] = node->nodes.nodes[i];
+                } else {
+                    node_list_delete(&node->nodes, i);
+                    i--;
+                }
+            }
+        } else {
+            for (uint64_t i = 0; i < node->nodes.len; i++) {
+                stackm[len1] = node->mark | mark;
+                stack1[len1++] = node->nodes.nodes[i];
+            }
+        }
+    }
 }

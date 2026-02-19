@@ -5,6 +5,7 @@ node_t *node_init() {
     const auto node = static_cast<node_t *>(malloc(sizeof(node_t)));
 
     node->type = AST_Type_None;
+    node->mark = 0;
     node->number = 0;
     node->symbol = 0;
     node->operation = 0;
@@ -17,6 +18,7 @@ node_t *node_init() {
 void node_clear(node_t *node) {
     if (node == nullptr) return;
     node->type = AST_Type_None;
+    node->mark = 0;
     node->number = 0;
     node->symbol = 0;
     node->operation = 0;
@@ -35,12 +37,14 @@ void node_move(node_t *node, node_t *src) {
     if (node == nullptr) return;
     if (src == nullptr) return node_clear(node);
     node->type = src->type;
+    node->mark = src->mark;
     node->number = src->number;
     node->symbol = src->symbol;
     node->operation = src->operation;
     node->line = src->line;
 
     src->type = AST_Type_None;
+    src->mark = 0;
     src->number = 0;
     src->symbol = 0;
     src->operation = 0;

@@ -127,9 +127,24 @@ static void print_token_list__(const token_list_t *list, const uint64_t size) {
         }
     }
 }
+void printBinary(int num) {
+    // Determine the number of bits for an int (commonly 32)
+    int num_bits = 8;
 
+    // Iterate from the most significant bit down to the least significant bit
+    for (int i = num_bits - 1; i >= 0; i--) {
+        // Shift the number right by 'i' positions and bitwise AND with 1
+        // This isolates the i-th bit
+        int bit = (num >> i) & 1;
+        printf("%d", bit);
+    }
+    printf(" ");
+}
 static void print_node__(const node_t *node, const uint64_t size) {
 
+    if (node->mark) {
+        printBinary(node->mark);
+    }
     switch (node->type) {
         case AST_Type_Number:
             printf("Number : \n");
@@ -154,9 +169,6 @@ static void print_node__(const node_t *node, const uint64_t size) {
         case AST_Type_Addition:
             printf("Addition : \n");
             break;
-        case AST_Type_Compare:
-            printf("Compare : \n");
-            break;
         default:
             printf("None\n");
     }
@@ -166,12 +178,6 @@ static void print_node__(const node_t *node, const uint64_t size) {
     if (node->type == AST_Type_Number) {
         PRINT_PREF PRINT_NEXT(node->nodes.len > 0)
         printf("%lld\n", node->number);
-    }
-    if (node->type == AST_Type_Sum) {
-        PRINT_PREF PRINT_NEXT(1)
-        printf("Limit Min: %lld\n", node->limit_min);
-        PRINT_PREF PRINT_NEXT(1)
-        printf("Limit Max: %lld\n", node->limit_max);
     }
     if (node->type == AST_Type_Identifier || node->type == AST_Type_QBit || node->type == AST_Type_Sum) {
         PRINT_PREF PRINT_NEXT(node->nodes.len > 0)
@@ -253,60 +259,71 @@ static void print_bytecode(const bytecode_t *bytecode) {
     print_bytecode__(bytecode, 0);
 }
 
-// void parser_sum_limits(bytecode_t *bytecode, node_t *node) {
-//     const uint8_t count = bytecode->count++;
-//     bytecode->symbol[count] = node->nodes.nodes[0]->nodes.nodes[0]->symbol;
-//
-//
-//     bytecode->min[count] = node->nodes.nodes[0]->nodes.nodes[1]->number;
-//     bytecode->max[count] = node->nodes.nodes[1]->number;
-// }
+void parser_sum_limits(bytecode_t *bytecode, node_t *node) {
+    const uint8_t count = bytecode->count++;
+    // print_node(node);
+    bytecode->symbol[count] = node->symbol;
+
+    node_t *min_node = node->nodes.nodes[0];
+    node_t *max_node = node->nodes.nodes[1];
+
+    for (uint8_t i = 0; i < count; i ++) {
+        optimize_node(min_node, bytecode->symbol[i], bytecode->min[i]);
+        optimize_node(max_node, bytecode->symbol[i], bytecode->max[i]);
+    }
+
+    if (min_node->type != AST_Type_Number || max_node->type != AST_Type_Number) {
+        // TODO error;
+    }
+
+     bytecode->min[count] = min_node->number;
+     bytecode->max[count] = max_node->number;
+}
 void parser_sum_interpret(parser_t *parser) {
     bytecode_t bytecode;
-    node_list_t listing;
-    node_list_t interpret;
-
     bytecode_init(&bytecode);
-    node_plist_init(&listing);
-    node_plist_init(&interpret);
 
-    node_plist_addend(&listing, parser->ast);
 
-    while (listing.len != 0) {
-        node_t *node = listing.nodes[listing.len - 1];
-        node_plist_pop(&listing);
+    node_t *stack1[256];
+    node_t *stack2[256];
+    uint16_t len1 = 0;
+    uint16_t len2 = 0;
+
+
+    stack1[len1++] = parser->ast;
+    while (len1) {
+        node_t *node = stack1[--len1];
 
         switch (node->type) {
             case AST_Type_Sum:
-                // parser_sum_limits(&bytecode, node);
-                node_plist_addend(&listing, node->nodes.nodes[2]);
+                parser_sum_limits(&bytecode, node);
+                stack1[len1++] = node->nodes.nodes[2];
                 break;
 
             case AST_Type_Number:
             case AST_Type_Identifier:
             case AST_Type_QBit:
-                node_plist_addend(&interpret, node);
+                stack2[len2++] = node;
                 break;
 
             case AST_Type_Power:
             case AST_Type_Negative:
-            case AST_Type_Multiplication:
-            case AST_Type_Addition:
-            case AST_Type_Compare:
-                node_plist_addend(&interpret, node);
+                stack2[len2++] = node;
                 if (node->nodes.len <= 0) break;
 
                 for (int64_t i = 0; i < node->nodes.len; i ++)
-                    node_plist_addend(&listing, node->nodes.nodes[i]);
+                    stack1[len1++] = node->nodes.nodes[i];
                 break;
+            case AST_Type_Multiplication:
+            case AST_Type_Addition:
+
             default:
                 break;
         }
     }
 
-    while (interpret.len != 0) {
-        node_t *node = interpret.nodes[interpret.len - 1];
-        node_plist_pop(&interpret);
+    while (len2) {
+        node_t *node = stack2[--len2];
         if (node->type == AST_Type_Number) {
             bytecode_addend_op(&bytecode, SET);
             bytecode_addend_val(&bytecode, node->number);
@@ -323,7 +340,8 @@ void parser_sum_interpret(parser_t *parser) {
             bytecode_addend_op(&bytecode, POW);
         } else if (node->type == AST_Type_Negative) {
             bytecode_addend_op(&bytecode, NEG);
-        // // } else if (node->type == AST_Type_Multiplication) {
+        } else if (node->type == AST_Type_Multiplication) {
+
         // //     for (int i = 0; i < node->nodes.len - 1; i ++)
         // //         bytecode_addend_op(&bytecode, MUL);
         // // } else if (node->type == AST_Type_Division) {
@@ -352,7 +370,7 @@ int main(void) {
     parser_init(&parser);
 
     // const char *data = "\\sum_{i=0}^N \\sum_{i=0}^N (i+j + 10 + 1)q_iq_j";
-    const char *data = "\\sum_{i=0}^{N-1} (i + 100) 10 q_i";
+    const char *data = "2 + \\sum_{i=0}^{N-1} (i + 100) 10 q_i";
     // const char *data = "a + 10 - (a - 10)";
 
     parser.data = (uint8_t *)data;
@@ -362,7 +380,7 @@ int main(void) {
     parser_run(&parser);
     parser_sum_interpret(&parser);
 
-    print_node(parser.ast);
+    // print_node(parser.ast);
     parser_free(&parser);
 
    //  int N=6;
