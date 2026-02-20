@@ -1,6 +1,7 @@
 #ifndef MATRIXCORE_PARSER_H
 #define MATRIXCORE_PARSER_H
 
+#include "bytecode.h"
 #include "token.h"
 #include "error.h"
 #include "node.h"
@@ -38,8 +39,8 @@ uint8_t optimize_node(node_t *root, char symbol, int64_t value);
 void parser_tokenize(parser_t *parser);
 void parser_parse_ast(parser_t *parser);
 void parser_optimizer(parser_t *parser);
-void parser_interpret(parser_t *parser);
-
+void parser_interpret(const parser_t *parser);
+void print_bytecode(const bytecode_t *bytecode);
 
 static void parser_init(parser_t *parser) {
     token_list_init(&parser->tokens);

@@ -6,8 +6,6 @@
 
 #include <stdio.h>
 
-#include "parser/bytecode.h"
-
 
 #define PRINT_PREF for(int _i = 0; _i < size; _i++) printf("%c", prefix[_i]);
 #define PRINT_NEXT(expr) \
@@ -235,6 +233,8 @@ static void print_bytecode__(const bytecode_t *bytecode, const uint64_t size) {
                     printf("SET I\n"); break;
                 case SET_J:
                     printf("SET J\n"); break;
+                case SET_QI:
+                    printf("SET QI\n"); break;
                 case SET_QJ:
                     printf("SET QJ\n"); break;
 
@@ -257,206 +257,18 @@ static void print_node(const node_t *node) {
 static void print_token(const token_t *token) {
     print_token__(token, 0);
 }
-static void print_bytecode(const bytecode_t *bytecode) {
+void print_bytecode(const bytecode_t *bytecode) {
     print_bytecode__(bytecode, 0);
 }
 
-void parser_sum_limits(bytecode_t *bytecode, node_t *node) {
-    const uint8_t count = bytecode->count++;
-    // print_node(node);
-    bytecode->symbol[count] = node->symbol;
-
-    node_t *min_node = node->nodes.nodes[0];
-    node_t *max_node = node->nodes.nodes[1];
-
-    for (uint8_t i = 0; i < count; i ++) {
-        optimize_node(min_node, bytecode->symbol[i], bytecode->min[i]);
-        optimize_node(max_node, bytecode->symbol[i], bytecode->max[i]);
-    }
-
-    if (min_node->type != AST_Type_Number || max_node->type != AST_Type_Number) {
-        // TODO error;
-    }
-
-     bytecode->min[count] = min_node->number;
-     bytecode->max[count] = max_node->number;
-}
-void parser_sum_interpret(parser_t *parser) {
-    bytecode_t bytecode;
-    bytecode_init(&bytecode);
-
-
-    node_t *stack1[128];
-    uint8_t  flag1[128];
-    node_t *stack2[128];
-    uint8_t  flag2[128];
-    uint16_t len1 = 0;
-    uint16_t len2 = 0;
-
-
-
-    node_t *list_p[128];
-    node_t *list_n[128];
-    uint16_t len_p = 0;
-    uint16_t len_n = 0;
-
-
-    stack1[len1++] = parser->ast;
-    while (len1) {
-        node_t *node = stack1[--len1];
-        if (node == nullptr) {
-            flag2[len2] = flag1[len1];
-            stack2[len2++] = nullptr;
-            continue;
-        }
-        switch (node->type) {
-            case AST_Type_Sum:
-                parser_sum_limits(&bytecode, node);
-                stack1[len1++] = node->nodes.nodes[2];
-                break;
-
-            case AST_Type_Number:
-            case AST_Type_Identifier:
-            case AST_Type_QBit:
-                stack2[len2++] = node;
-                break;
-
-            case AST_Type_Power:
-            case AST_Type_Negative:
-                stack2[len2++] = node;
-                if (node->nodes.len <= 0) break;
-
-                for (int64_t i = 0; i < node->nodes.len; i ++)
-                    stack1[len1++] = node->nodes.nodes[i];
-                break;
-            case AST_Type_Multiplication:
-                if (node->nodes.len <= 0) break;
-                len_p = len_n = 0;
-                for (int64_t i = 0; i < node->nodes.len; i ++)
-                    if (node->nodes.nodes[i]->operation) list_p[len_p++] = node->nodes.nodes[i];
-                    else                                 list_n[len_n++] = node->nodes.nodes[i];
-
-                if (len_p == 0) {
-                    print_node(node);
-                    flag2[len2] = NMl;
-                    stack2[len2++] = nullptr;
-                } else if (len_n != 0) {
-                    flag2[len2] = DIV;
-                    stack2[len2++] = nullptr;
-                }
-
-                if (len_p != 0) {
-                    stack1[len1++] = list_p[0];
-                    for (uint16_t i = 1; i < len_p; i ++) {
-                        stack1[len1++] = list_p[i];
-                        flag1[len1] = MUL;
-                        stack1[len1++] = nullptr;
-                    }
-                }
-                if (len_n != 0) {
-                    stack1[len1++] = list_n[0];
-                    for (uint16_t i = 1; i < len_n; i ++) {
-                        flag1[len1] = MUL;
-                        stack1[len1++] = nullptr;
-                        stack1[len1++] = list_n[i];
-                    }
-                }
-
-                break;
-            case AST_Type_Addition:
-                if (node->nodes.len <= 0) break;
-                len_p = len_n = 0;
-                for (int64_t i = 0; i < node->nodes.len; i ++)
-                    if (node->nodes.nodes[i]->operation) list_p[len_p++] = node->nodes.nodes[i];
-                    else                                 list_n[len_n++] = node->nodes.nodes[i];
-
-                if (len_p == 0) {
-                    flag2[len2] = NEG;
-                    stack2[len2++] = nullptr;
-                } else if (len_n != 0) {
-                    flag2[len2] = SUB;
-                    stack2[len2++] = nullptr;
-                }
-
-                if (len_p != 0) {
-                    stack1[len1++] = list_p[0];
-                    for (uint16_t i = 1; i < len_p; i ++) {
-                        stack1[len1++] = list_p[i];
-                        flag1[len1] = ADD;
-                        stack1[len1++] = nullptr;
-                    }
-                }
-                if (len_n != 0) {
-                    stack1[len1++] = list_n[0];
-                    for (uint16_t i = 1; i < len_n; i ++) {
-                        stack1[len1++] = list_n[i];
-                        flag1[len1] = ADD;
-                        stack1[len1++] = nullptr;
-                    }
-                }
-
-                break;
-            default:
-                break;
-        }
-    }
-
-    while (len2) {
-        node_t *node = stack2[--len2];
-        if (node == nullptr) {
-
-            bytecode_addend_op(&bytecode, flag2[len2]);
-            continue;
-        }
-
-        if (node->type == AST_Type_Number) {
-            bytecode_addend_op(&bytecode, SET);
-            bytecode_addend_val(&bytecode, node->number);
-        } else if (node->type == AST_Type_QBit) {
-            if (node->symbol == bytecode.symbol[0]) {
-                bytecode_addend_op(&bytecode, SET);
-                bytecode_addend_val(&bytecode, 1);
-            }
-            if (node->symbol == bytecode.symbol[1])
-                bytecode_addend_op(&bytecode, SET_QJ);
-        } else if (node->type == AST_Type_Identifier) {
-            if (node->symbol == bytecode.symbol[0])
-                bytecode_addend_op(&bytecode, SET_I);
-            if (node->symbol == bytecode.symbol[1])
-                bytecode_addend_op(&bytecode, SET_J);
-        } else if (node->type == AST_Type_Power) {
-            bytecode_addend_op(&bytecode, POW);
-        } else if (node->type == AST_Type_Negative) {
-            bytecode_addend_op(&bytecode, NEG);
-        } else if (node->type == AST_Type_Addition) {
-
-        // //     for (int i = 0; i < node->nodes.len - 1; i ++)
-        // //         bytecode_addend_op(&bytecode, MUL);
-        // // } else if (node->type == AST_Type_Division) {
-        // //     for (int i = 0; i < node->nodes.len - 1; i ++)
-        // //         bytecode_addend_op(&bytecode, DIV);
-        } else {
-        }
-    }
-
-    print_bytecode(&bytecode);
-    bytecode_free(&bytecode);
-}
-void parser_interpret(parser_t *parser) {
-
-}
-
-
-#include "solver/cpu_adapter.cpp"
-#include "solver/cfc.h"
 
 int main(void) {
     parser_t parser = {};
     parser_init(&parser);
 
-    const char *data = "\\sum_{i=0}^N \\sum_{j=0}^N (i + j + 10 + 1)q_i q_j";
-    // const char *data = "2 + \\sum_{i=0}^{N-1} (i + 100) 10 q_i";
-    // const char *data = "a + 10 - (a - 10)";
+    // const char *data = "\\sum_{i=0}^N \\sum_{j=0}^N (i + j + 10 + 1)q_i q_j";
+    // const char *data = "\\sum_{i=0}^{N-1} (i + 100) 10 q_i";
+    const char *data = "(\\sum_{i=0}^{N-1} 2q_i + \\sum_{i=0}^{N-1} 3q_i)(\\sum_{j=0}^{N-1} 4q_j + \\sum_{j=0}^{N-1} 5q_j)";
 
     parser.data = (uint8_t *)data;
     parser.size = strlen(data);
@@ -464,7 +276,7 @@ int main(void) {
 
     parser_run(&parser);
     print_node(parser.ast);
-    parser_sum_interpret(&parser);
+    parser_interpret(&parser);
 
     parser_free(&parser);
 

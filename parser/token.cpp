@@ -80,11 +80,7 @@ token_t *token_list_append(token_list_t *list) {
 }
 void token_list_pop(token_list_t *list) {
     if (list == nullptr) return;
-    const uint64_t len = list->len - 1;
-
-    if (list->tokens[len] != nullptr) token_free(list->tokens[len]);
-    list->tokens[len] = nullptr;
-    list->len = len;
+    token_list_resize(list, list->len - 1);
 }
 
 
@@ -127,8 +123,5 @@ void token_plist_addend(token_list_t *list, token_t *token) {
 }
 void token_plist_pop(token_list_t *list) {
     if (list == nullptr) return;
-    const uint64_t len = list->len - 1;
-
-    list->tokens[len] = nullptr;
-    list->len = len;
+    token_plist_resize(list, list->len - 1);
 }
