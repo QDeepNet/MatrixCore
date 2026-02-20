@@ -19,10 +19,25 @@
 #define SET_QJ  0x14
 
 
+
+typedef struct {
+    uint8_t symbol;
+    int64_t min;
+    int64_t max;
+} limit_t;
+
+typedef struct {
+    limit_t **data;
+    uint64_t len;
+    uint64_t cap;
+} limit_list_t;
+
 typedef struct {
     uint8_t *data;
     uint64_t len;
     uint64_t cap;
+
+    limit_list_t limits;
 } bytecode_t;
 
 typedef struct {
@@ -32,19 +47,17 @@ typedef struct {
 } bytecode_list_t;
 
 
-void bytecode_resize(bytecode_t *list, uint64_t cap);
+void bytecode_resize(bytecode_t *code, uint64_t cap);
 
 bytecode_t *bytecode_init();
-void bytecode_clear(bytecode_t *list);
-void bytecode_free(bytecode_t *list);
+void bytecode_clear(bytecode_t *code);
+void bytecode_free(bytecode_t *code);
 
-void bytecode_set(bytecode_t *list, const bytecode_t *src);
-void bytecode_addend_op(bytecode_t *list, uint8_t op);
-void bytecode_addend_val(bytecode_t *list, int64_t val);
-void bytecode_pop(bytecode_t *list);
+void bytecode_set(bytecode_t *code, const bytecode_t *src);
+void bytecode_addend_op(bytecode_t *code, uint8_t op);
+void bytecode_addend_val(bytecode_t *code, int64_t val);
+void bytecode_pop(bytecode_t *code);
 
-
-void bytecode_list_resize(bytecode_list_t *list, uint64_t cap);
 
 void bytecode_list_init(bytecode_list_t *list);
 void bytecode_list_clear(bytecode_list_t *list);
@@ -57,15 +70,21 @@ void bytecode_list_delete(bytecode_list_t *list, uint64_t id);
 void bytecode_list_pop(bytecode_list_t *list);
 
 
-typedef struct {
-    uint8_t symbol;
-    int64_t min;
-    int64_t max;
-} bytecode_limits_t;
+limit_t *limit_init();
+void limit_clear(limit_t *limit);
+void limit_free(limit_t *limit);
 
-void bytecode_limits_init(bytecode_limits_t *limits);
-void bytecode_limits_clear(bytecode_limits_t *limits);
-void bytecode_limits_free(bytecode_limits_t *limits);
+void limit_set(limit_t *limit, const limit_t *src);
+
+
+void limit_list_init(limit_list_t *list);
+void limit_list_clear(limit_list_t *list);
+void limit_list_free(limit_list_t *list);
+
+void limit_list_set(limit_list_t *list, const limit_list_t *src);
+
+limit_t *limit_list_append(limit_list_t *list);
+void limit_list_pop(limit_list_t *list);
 
 
 

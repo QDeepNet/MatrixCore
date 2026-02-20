@@ -3,10 +3,6 @@
 typedef struct {
     bytecode_list_t list;
 
-    uint8_t count;
-    uint8_t symbol[2];
-    int64_t min[2];
-    int64_t max[2];
     
     uint64_t stack[128];
     uint64_t size;
@@ -19,36 +15,39 @@ typedef struct {
     node_t *list_n[32];
 } temp_lists;
 
-void parser_append_op(interpret_parser *parser, const uint8_t op) {
+void parser_append_op(const interpret_parser *parser, const uint8_t op) {
     for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
         bytecode_addend_op(parser->list.data[i], op);
 }
-void parser_append_val(interpret_parser *parser, const int64_t val) {
+void parser_append_val(const interpret_parser *parser, const int64_t val) {
     for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
         bytecode_addend_val(parser->list.data[i], val);
 }
-
-void parser_append_limits(interpret_parser *parser, node_t *node) {
-    const uint8_t count = parser->count++;
-    // print_node(node);
-    parser->symbol[count] = node->symbol;
-
-    node_t *min_node = node->nodes.nodes[0];
-    node_t *max_node = node->nodes.nodes[1];
-
-    for (uint8_t i = count; i > 0;) {
-        --i;
-        optimize_node(min_node, parser->symbol[i], parser->min[i]);
-        optimize_node(max_node, parser->symbol[i], parser->max[i]);
-    }
+void parser_append_ident(const interpret_parser *parser, const uint8_t symbol) {
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
+        bytecode_addend_op(parser->list.data[i], parser->list.data[i]->limits.data[0]->symbol == symbol ? SET_I : SET_J);
+}
+void parser_append_qubit(const interpret_parser *parser, const uint8_t symbol) {
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
+        bytecode_addend_op(parser->list.data[i], parser->list.data[i]->limits.data[0]->symbol == symbol ? SET_QI : SET_QJ);
+}
+void parser_append_limits(const interpret_parser *parser, const node_t *node) {
+    const node_t *min_node = node->nodes.nodes[0];
+    const node_t *max_node = node->nodes.nodes[1];
 
     if (min_node->type != AST_Type_Number || max_node->type != AST_Type_Number) {
         // TODO error;
     }
 
-    parser->min[count] = min_node->number;
-    parser->max[count] = max_node->number;
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++) {
+        limit_t *limit = limit_list_append(&parser->list.data[i]->limits);
+        limit->symbol = node->symbol;
+        limit->min = min_node->number;
+        limit->max = max_node->number;
+    }
 }
+
+
 void parser_sum_interpret(interpret_parser *parser, node_t *node) {
     temp_lists *lists;
     uint16_t len_p = 0;
@@ -63,23 +62,18 @@ void parser_sum_interpret(interpret_parser *parser, node_t *node) {
     parser->mark |= node->mark;
     switch (node->type) {
         case AST_Type_Sum:
-            parser_sum_limits(parser, node);
+            parser_append_limits(parser, node);
             parser_sum_interpret(parser, node->nodes.nodes[2]);
-            parser->count--;
             break;
         case AST_Type_Number:
             parser_append_op(parser, SET);
             parser_append_val(parser, node->number);
             break;
         case AST_Type_Identifier:
-            if (node->symbol == parser->symbol[0]) parser_append_op(parser, SET_I);
-            if (node->symbol == parser->symbol[1]) parser_append_op(parser, SET_J);
+            parser_append_ident(parser, node->symbol);
             break;
         case AST_Type_QBit:
-            if (node->symbol == parser->symbol[0])
-                parser_append_op(parser, SET_QI);
-            if (node->symbol == parser->symbol[1])
-                parser_append_op(parser, SET_QJ);
+            parser_append_qubit(parser, node->symbol);
             break;
         case AST_Type_Power:
             for (int64_t i = 0; i < node->nodes.len; i ++)
@@ -163,7 +157,6 @@ void parser_interpret(const parser_t *parser) {
     bytecode_list_init(&_parser.list);
     bytecode_list_append(&_parser.list);
     _parser.stack[0] = 0;
-    _parser.count = 0;
     _parser.mark = 0;
     _parser.size = 0;
 
