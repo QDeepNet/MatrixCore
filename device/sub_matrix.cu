@@ -53,7 +53,7 @@ __device__ void __constructor_put(const device_constructor_t *c, const device_ma
     values[threadIdx.x] = val;
     __syncthreads();
 
-    for (unsigned int stride = threadIdx.x / 2; stride > 0; stride >>= 1) {
+    for (unsigned int stride = 1024 / 2; stride > 0; stride >>= 1) {
         if (threadIdx.x < stride) values[threadIdx.x] += values[threadIdx.x + stride];
         __syncthreads();
     }
@@ -129,6 +129,8 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
                 __constructor_set_value_i(c, m);break;
             case SET_J:
                 __constructor_set_value_j(c);break;
+            case SET_QI:
+                __constructor_set_const(c, 1);break;
             case SET_QJ:
                 __constructor_set_value_qj(c);break;
 

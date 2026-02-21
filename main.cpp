@@ -275,8 +275,9 @@ int main(void) {
     parser.N = 100;
 
     parser_run(&parser);
-    print_node(parser.ast);
-    parser_interpret(&parser);
+
+    for (uint64_t i = 0; i < parser.bytecodes.len; i ++)
+        print_bytecode(parser.bytecodes.data[i]);
 
     parser_free(&parser);
 

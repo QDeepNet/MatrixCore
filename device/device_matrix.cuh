@@ -8,10 +8,19 @@
 typedef struct {
     int32_t *n;
     int64_t *ids_i; // indexes to make sub qubo
+    int64_t *Q;     // n x n (row-major) Qubo
 
-    int64_t *Q; // matrix n by n
-    int64_t *J; // matrix n by n
-    int64_t *h;
+    float_t *J;     // n x n (row-major) Ising
+    int64_t *h;     // optional
+
+    // ---- CFC state/output on device ----
+    int8_t  *spin;    // optional, size = n, writes +/-1 if non-null
+
+    // ---- solver params ----
+    int32_t  n_iter;  // iterations
+    float_t  dt;      // typically 0.1f
+    float_t  clamp;   // typically 1.5f
+    uint32_t seed;    // for optional init
 } device_matrix_t;
 
 

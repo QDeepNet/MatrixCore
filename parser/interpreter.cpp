@@ -1,7 +1,7 @@
 #include "parser.h"
 
 typedef struct {
-    bytecode_list_t list;
+    bytecode_list_t *list;
 
     
     uint64_t stack[128];
@@ -16,20 +16,20 @@ typedef struct {
 } temp_lists;
 
 void parser_append_op(const interpret_parser *parser, const uint8_t op) {
-    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
-        bytecode_addend_op(parser->list.data[i], op);
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list->len; i ++)
+        bytecode_addend_op(parser->list->data[i], op);
 }
 void parser_append_val(const interpret_parser *parser, const int64_t val) {
-    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
-        bytecode_addend_val(parser->list.data[i], val);
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list->len; i ++)
+        bytecode_addend_val(parser->list->data[i], val);
 }
 void parser_append_ident(const interpret_parser *parser, const uint8_t symbol) {
-    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
-        bytecode_addend_op(parser->list.data[i], parser->list.data[i]->limits.data[0]->symbol == symbol ? SET_I : SET_J);
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list->len; i ++)
+        bytecode_addend_op(parser->list->data[i], parser->list->data[i]->limits.data[0]->symbol == symbol ? SET_I : SET_J);
 }
 void parser_append_qubit(const interpret_parser *parser, const uint8_t symbol) {
-    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++)
-        bytecode_addend_op(parser->list.data[i], parser->list.data[i]->limits.data[0]->symbol == symbol ? SET_QI : SET_QJ);
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list->len; i ++)
+        bytecode_addend_op(parser->list->data[i], parser->list->data[i]->limits.data[0]->symbol == symbol ? SET_QI : SET_QJ);
 }
 void parser_append_limits(const interpret_parser *parser, const node_t *node) {
     const node_t *min_node = node->nodes.nodes[0];
@@ -39,8 +39,8 @@ void parser_append_limits(const interpret_parser *parser, const node_t *node) {
         // TODO error;
     }
 
-    for (uint64_t i = parser->stack[parser->size]; i < parser->list.len; i ++) {
-        limit_t *limit = limit_list_append(&parser->list.data[i]->limits);
+    for (uint64_t i = parser->stack[parser->size]; i < parser->list->len; i ++) {
+        limit_t *limit = limit_list_append(&parser->list->data[i]->limits);
         limit->symbol = node->symbol;
         limit->min = min_node->number;
         limit->max = max_node->number;
@@ -48,14 +48,14 @@ void parser_append_limits(const interpret_parser *parser, const node_t *node) {
 }
 
 
-void parser_sum_interpret(interpret_parser *parser, node_t *node) {
+void parser_sum_interpret(interpret_parser *parser, const node_t *node) {
     temp_lists *lists;
     uint16_t len_p = 0;
     uint16_t len_n = 0;
     
     uint16_t mark = parser->mark;
 
-    uint64_t len = parser->list.len;
+    uint64_t len = parser->list->len;
     uint64_t stack = parser->stack[parser->size];
 
     
@@ -106,7 +106,7 @@ void parser_sum_interpret(interpret_parser *parser, node_t *node) {
             if (len_p == 0)         parser_append_op(parser, NMl);
             else if (len_n != 0)    parser_append_op(parser, DIV);
             
-            parser->pos = parser->list.len;
+            parser->pos = parser->list->len;
             free(lists);
             break;
         case AST_Type_Addition:
@@ -134,16 +134,16 @@ void parser_sum_interpret(interpret_parser *parser, node_t *node) {
             add2:
 
             for (int64_t i = 0; i < node->nodes.len; i ++) {
-                parser->stack[++parser->size] = parser->list.len;
+                parser->stack[++parser->size] = parser->list->len;
                 for (uint64_t j = stack; j < len; j ++)
-                    bytecode_set(bytecode_list_append(&parser->list), parser->list.data[j]);
+                    bytecode_set(bytecode_list_append(parser->list), parser->list->data[j]);
 
                 parser_sum_interpret(parser, node->nodes.nodes[i]);
                 --parser->size;
             }
 
             for (uint64_t j = stack; j < len; j ++)
-                bytecode_list_delete(&parser->list, j);
+                bytecode_list_delete(parser->list, j);
 
             break;
         default: break;
@@ -152,20 +152,15 @@ void parser_sum_interpret(interpret_parser *parser, node_t *node) {
     
     parser->mark = mark;
 }
-void parser_interpret(const parser_t *parser) {
+void parser_interpret(parser_t *parser) {
+    bytecode_list_clear(&parser->bytecodes);
+    
     interpret_parser _parser = {};
-    bytecode_list_init(&_parser.list);
-    bytecode_list_append(&_parser.list);
+    _parser.list = &parser->bytecodes;
+    bytecode_list_append(_parser.list);
     _parser.stack[0] = 0;
     _parser.mark = 0;
     _parser.size = 0;
 
-
     parser_sum_interpret(&_parser, parser->ast);
-
-    // bytecode_free(_parser.bytecode);
-
-    for (uint64_t i = 0; i < _parser.list.len; i ++) {
-        print_bytecode(_parser.list.data[i]);
-    }
 }
