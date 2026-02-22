@@ -26,11 +26,7 @@ add_executable(MatrixCore main.cpp
         parser/bytecode.h
         parser/bytecode.cpp
         parser/optimizer.cpp
-        solver/cfc.h
-        solver/adapter.h
-        solver/cpu_adapter.cpp
         device/device_matrix.cuh
-        solver/gpu_adapter.cu
         device/sub_matrix.cuh
         device/device_constructor.cuh
         device/device_instruction.cuh
@@ -38,6 +34,7 @@ add_executable(MatrixCore main.cpp
         device/ising_converter.cu
         device/cfc_solver.cuh
         device/cfc_solver.cu
+        device/device_bytecode.cuh
 )
 
 # 1. Function for computation the total energy of the vector

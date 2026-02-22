@@ -26,8 +26,8 @@ static __inline__ device_instruction_t *device_instruction_init(const uint64_t s
     return i;
 }
 static __inline__ void device_instruction_free(device_instruction_t *i) {
-    cudaFree(&i->params);
-    cudaFree(&i->instructions);
+    cudaFree(i->params);
+    cudaFree(i->instructions);
 }
 
 #endif //MATRIXCORE_DEVICE_INSTRUCTION_CUH

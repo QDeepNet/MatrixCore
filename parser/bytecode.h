@@ -4,19 +4,20 @@
 #include <cstdint>
 
 #define NEG 0x01
-#define ADD 0x02
-#define SUB 0x03
-#define NMl 0x04
-#define MUL 0x05
-#define DIV 0x06
-#define MOD 0x07
-#define POW 0x08
+#define NMl 0x02
 
-#define SET     0x10
-#define SET_I   0x11
-#define SET_J   0x12
-#define SET_QI  0x13
-#define SET_QJ  0x14
+#define ADD 0x11
+#define SUB 0x12
+#define MUL 0x13
+#define DIV 0x14
+#define MOD 0x15
+#define POW 0x16
+
+#define SET     0x21
+#define SET_I   0x22
+#define SET_J   0x23
+#define SET_QI  0x24
+#define SET_QJ  0x25
 
 
 

@@ -35,10 +35,11 @@ __device__ __forceinline__ float randn01(uint32_t s) {
     return r * __cosf(th);
 }
 
-
-void cfc_solver(device_matrix_t *m) {
+// <<<B, 1024>>>
+__global__  void cfc_solver(device_matrix_t *m) {
     const uint32_t tid  = threadIdx.x;
-    const int32_t  n    = m->n[0];
+    const uint32_t bid  = threadIdx.x;
+    const int32_t  n    = m->n;
 
     // Shared: x + tmp buffer (tmp is reused: reduction + x_next)
     __shared__ float_t x_sh[1024];
@@ -74,7 +75,7 @@ void cfc_solver(device_matrix_t *m) {
     //    B (batch) is gridDim.x, sample index is blockIdx.x
     // -------------------------
     if (tid < n) {
-        x_sh[tid] = 0.1f * randn01(m->seed ^ 0x9E3779B9u ^ 0x85EBCA6Bu * (tid + 1));
+        x_sh[tid] = 0.1f * randn01(m->seed ^ 0x9E3779B9u * (bid + 1) ^ 0x85EBCA6Bu * (tid + 1));
         e_sh[tid] = 1.0f;
     }
     __syncthreads();
@@ -138,5 +139,5 @@ void cfc_solver(device_matrix_t *m) {
     // -------------------------
     // 4) export results to global
     // -------------------------
-    if (tid < n) m->spin[tid] = x_sh[tid] >= 0.0f ? 1 : -1;
+    if (tid < n) m->spin[bid * n + tid] = x_sh[tid] >= 0.0f ? 1 : -1;
 }
