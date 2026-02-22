@@ -51,13 +51,18 @@ __device__ __forceinline__ void __constructor_pow(const device_constructor_t *c,
 }
 
 // <<<1024, 1024>>>
+__global__ void __constructor_prepare(const device_submatrix_t *m) {
+    m->J[blockIdx.x << 10 | threadIdx.x] = 0;
+    if (blockIdx.x == 0) m->h[threadIdx.x] = 0;
+}
+
+// <<<1024, 1024>>>
 // v - is current variance
 __global__  void __constructor_interpreter(const device_constructor_t *c, const device_submatrix_t *m, const device_bytecode_t *b, const uint32_t v) {
     const int64_t real_i = m->ids_i[threadIdx.x];
     const int64_t real_j = c->offset_j + blockIdx.x;
     const int64_t relt_i = threadIdx.x;
     const int64_t relt_j = c->ids_j[blockIdx.x];
-    const int64_t relt_p = relt_j != -1 ? relt_j : relt_i;
 
     __shared__ float_t h[1024];
 
@@ -119,7 +124,7 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
     else atomicAdd(&m->h[relt_i], (float_t)val);
     __syncthreads();
 
-    if (relt_j != relt_i) atomicAdd(&m->J[relt_p * m->n + relt_j], h[threadIdx.x]);
+    if (relt_j != relt_i) atomicAdd(&m->J[relt_j * m->n + relt_i], h[threadIdx.x]);
 
     __syncthreads();
     for (unsigned stride = blockDim.x / 2; stride > 0; stride >>= 1) {
