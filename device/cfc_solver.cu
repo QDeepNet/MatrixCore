@@ -36,7 +36,7 @@ __device__ __forceinline__ float randn01(uint32_t s) {
 }
 
 // <<<B, 1024>>>
-__global__  void cfc_solver(device_submatrix_t *m) {
+__global__  void cfc_solver(const device_submatrix_t *m, const uint32_t v) {
     const uint32_t tid  = threadIdx.x;
     const uint32_t bid  = threadIdx.x;
     const int32_t  n    = m->n;
@@ -54,8 +54,8 @@ __global__  void cfc_solver(device_submatrix_t *m) {
     // -------------------------
     float_t sum = 0.0f;
     for(uint32_t i = tid; i < n * n; i += 1024) {
-        const float_t v = m->J[i];
-        sum += v * v;
+        const float_t _v = m->J[i];
+        sum += _v * _v;
     }
 
     s_sh[tid] = sum;
@@ -136,7 +136,7 @@ __global__  void cfc_solver(device_submatrix_t *m) {
     // -------------------------
     // 4) export results to global
     // -------------------------
-    if (tid < n) x_sh[tid] = m->spin[bid * n + tid] = x_sh[tid] >= 0.0f ? 1 : -1;
+    if (tid < n) x_sh[tid] = m->spin[(bid * m->v + v) * n + tid] = x_sh[tid] >= 0.0f ? 1 : -1;
     __syncthreads();
 
     // -------------------------
@@ -173,5 +173,5 @@ __global__  void cfc_solver(device_submatrix_t *m) {
         __syncthreads();
     }
 
-    if (tid == 0) m->e[bid] = -0.5f * s_sh[0] - e_sh[0];
+    if (tid == 0) m->e[bid * m->v + v] = -0.5f * s_sh[0] - e_sh[0];
 }
