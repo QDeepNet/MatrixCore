@@ -1,5 +1,5 @@
 
-#include "device_matrix.cuh"
+#include "device_submatrix.cuh"
 
 __device__ __forceinline__ float clamp_abs(float v, float lim) {
     if (v >  lim) return  lim;
@@ -36,7 +36,7 @@ __device__ __forceinline__ float randn01(uint32_t s) {
 }
 
 // <<<B, 1024>>>
-__global__  void cfc_solver(device_matrix_t *m) {
+__global__  void cfc_solver(device_submatrix_t *m) {
     const uint32_t tid  = threadIdx.x;
     const uint32_t bid  = threadIdx.x;
     const int32_t  n    = m->n;
@@ -44,8 +44,10 @@ __global__  void cfc_solver(device_matrix_t *m) {
     // Shared: x + tmp buffer (tmp is reused: reduction + x_next)
     __shared__ float_t x_sh[1024];
     __shared__ float_t e_sh[1024];
-    __shared__ float_t tmp[1024];
-    __shared__ float_t xi = 0;
+    __shared__ float_t s_sh[1024];
+    __shared__ float_t xi;
+
+    if (threadIdx.x == 0) xi = 0;
 
     // -------------------------
     // 1) compute xi = sqrt(2n / sum(J^2))
@@ -56,16 +58,16 @@ __global__  void cfc_solver(device_matrix_t *m) {
         sum += v * v;
     }
 
-    tmp[tid] = sum;
+    s_sh[tid] = sum;
     __syncthreads();
 
     for(uint32_t stride = 1024 / 2; stride > 0; stride >>= 1) {
-        if(tid < stride) tmp[tid] += tmp[tid + stride];
+        if(tid < stride) s_sh[tid] += s_sh[tid + stride];
         __syncthreads();
     }
 
     if(tid == 0) {
-        const float_t denom = tmp[0];
+        const float_t denom = s_sh[0];
         xi = sqrtf(2.0f * n / (denom < 1e-8f? 1e-8f : denom));
     }
     __syncthreads();
@@ -102,7 +104,6 @@ __global__  void cfc_solver(device_matrix_t *m) {
         for (uint32_t row = tid >> 5; row < n; row += 32) {
             const float_t *rowJ = m->J + row * n;
 
-            // acc = dot(J[row,:], x)
             float_t acc = 0.0f;
             for (int k = (int)lane; k < n; k += 32)
                 acc += rowJ[k] * x_sh[k];
@@ -114,24 +115,20 @@ __global__  void cfc_solver(device_matrix_t *m) {
             const float_t e = e_sh[row];
             const float_t z = xi * e * (acc + m->h[row]);
 
-            // x = x + (-x^3 + (p-1)*x + z)*dt
             float_t x_next = x + (-(x * x * x) + p_minus_1 * x + z) * dt;
-
-            // e = e + (-beta*e*(z^2 - alpha))*dt
             float_t e_next = e + -0.15f * e * (z * z - 1.0f) * dt;
 
-            // clamp x and e (python where())
             x_next = clamp_abs(x_next, lim);
             if (e_next < 0.01f) e_next = 0.01f;
 
-            tmp[row]   = x_next;
+            s_sh[row]  = x_next;
             e_sh[row]  = e_next;
         }
 
         __syncthreads();
 
         // commit x_next
-        if (tid < n) x_sh[tid] = tmp[tid];
+        if (tid < n) x_sh[tid] = s_sh[tid];
 
         __syncthreads();
     }
@@ -139,5 +136,42 @@ __global__  void cfc_solver(device_matrix_t *m) {
     // -------------------------
     // 4) export results to global
     // -------------------------
-    if (tid < n) m->spin[bid * n + tid] = x_sh[tid] >= 0.0f ? 1 : -1;
+    if (tid < n) x_sh[tid] = m->spin[bid * n + tid] = x_sh[tid] >= 0.0f ? 1 : -1;
+    __syncthreads();
+
+    // -------------------------
+    // 5) compute Ising energy for this solution and store m->energy[b]
+    //     E = -0.5 * s^T J s - h^T s
+    // -------------------------
+
+    float local_coup  = 0.0f;  // contributes to s^T J s
+    float local_field = 0.0f;  // contributes to h^T s
+
+    for (uint32_t row = tid >> 5; row < n; row += 32) {
+        const float *rowJ = m->J + row * n;
+
+        float acc = 0.0f;
+        for (uint32_t k = lane; k < n; k += 32)
+            acc += rowJ[k] * x_sh[k];
+        acc = warp_sum(acc);
+
+        if (lane != 0) continue;
+
+        local_coup  += x_sh[row] * acc;
+        local_field += m->h[row] * x_sh[row];
+    }
+
+    s_sh[tid] = local_coup;
+    e_sh[tid] = local_field;
+    __syncthreads();
+
+    for (uint32_t stride = blockDim.x >> 1; stride > 0; stride >>= 1) {
+        if (tid < stride) {
+            s_sh[tid] += s_sh[tid + stride];
+            e_sh[tid] += e_sh[tid + stride];
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) m->e[bid] = -0.5f * s_sh[0] - e_sh[0];
 }

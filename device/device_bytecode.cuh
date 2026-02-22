@@ -23,15 +23,15 @@ typedef struct {
 } device_bytecode_t;
 
 static device_bytecode_t *device_bytecode_init(const bytecode_list_t *list) {
-    auto bytecode = (device_bytecode_t *)malloc(sizeof(device_bytecode_t));
+    const auto bytecode = (device_bytecode_t *)malloc(sizeof(device_bytecode_t));
     *bytecode = {};
     bytecode->len = list->len;
 
     uint64_t total_bytes = 0;
     for (uint64_t i = 0; i < list->len; ++i) total_bytes += list->data[i]->len;
 
-    auto h_pool = (uint8_t*)malloc(total_bytes);
-    auto h_desc = (device_limit_t*)malloc(list->len * sizeof(device_limit_t));
+    const auto h_pool = (uint8_t*)malloc(total_bytes);
+    const auto h_desc = (device_limit_t*)malloc(list->len * sizeof(device_limit_t));
 
     for (uint64_t pos = 0, bi = 0; bi < list->len; ++bi) {
         const bytecode_t *bc = list->data[bi];
@@ -65,6 +65,9 @@ static device_bytecode_t *device_bytecode_init(const bytecode_list_t *list) {
 
     cudaMemcpy(bytecode->d_pool, h_pool, total_bytes, cudaMemcpyHostToDevice);
     cudaMemcpy(bytecode->d_desc, h_desc, list->len * sizeof(device_limit_t), cudaMemcpyHostToDevice);
+
+    free(h_pool);
+    free(h_desc);
 
     return bytecode;
 }

@@ -17,8 +17,6 @@ add_executable(MatrixCore main.cpp
         parser/parsing.cpp
         matrix.h
         device/sub_matrix.cu
-#        sub_matrix.cuh
-#        sub_matrix.cuh
         parser/token.cpp
         parser/node.cpp
         parser/error.cpp
@@ -26,18 +24,11 @@ add_executable(MatrixCore main.cpp
         parser/bytecode.h
         parser/bytecode.cpp
         parser/optimizer.cpp
-        device/device_matrix.cuh
-        device/sub_matrix.cuh
+        device/device_submatrix.cuh
         device/device_constructor.cuh
         device/device_instruction.cuh
-        device/ising_converter.cuh
-        device/ising_converter.cu
-        device/cfc_solver.cuh
         device/cfc_solver.cu
         device/device_bytecode.cuh
+        device/subqubo_merge_tree_dp.cu
+        device/subqubo_merge_tree_dp.cu
 )
-
-# 1. Function for computation the total energy of the vector
-# 2. Understand the all computations in the Ipynb
-
-# 3. Make the graph like construction

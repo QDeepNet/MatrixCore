@@ -5,7 +5,7 @@
 #include <string>
 
 typedef struct {
-    std::pmr::string msg;
+    std::string msg;
 
     parser_line_t line;
     uint8_t present;
