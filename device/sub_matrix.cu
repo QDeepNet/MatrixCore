@@ -5,42 +5,52 @@
 #include "device_instruction.cuh"
 
 
-__device__ __forceinline__ void __constructor_set_const   (const device_constructor_t *c, const uint32_t stack_top, const int64_t value) {
+__device__ __forceinline__ void __constructor_set_const   (const device_constructor_t *c, uint32_t &stack_top, const int64_t value) {
     c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] = value;
+    stack_top++;
 }
-__device__ __forceinline__ void __constructor_set_value_i (const device_constructor_t *c, const uint32_t stack_top, const device_submatrix_t *m) {
+__device__ __forceinline__ void __constructor_set_value_i (const device_constructor_t *c, uint32_t &stack_top, const device_submatrix_t *m) {
     c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] = m->ids_i[threadIdx.x];
+    stack_top++;
 }
-__device__ __forceinline__ void __constructor_set_value_j (const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_set_value_j (const device_constructor_t *c, uint32_t &stack_top) {
     c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] = c->offset_j + blockIdx.x;
+    stack_top++;
 }
-__device__ __forceinline__ void __constructor_set_value_qj(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_set_value_qj(const device_constructor_t *c, uint32_t &stack_top) {
     c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] = c->q_j[blockIdx.x];
+    stack_top++;
 }
 
 __device__ __forceinline__ void __constructor_neg(const device_constructor_t *c, const uint32_t stack_top) {
-    c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] *= -1;
+    c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= -1;
 }
 __device__ __forceinline__ void __constructor_nml(const device_constructor_t *c, const uint32_t stack_top) {
-    c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x] = 1 / c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x];
+    c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] = 1 / c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_add(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_add(const device_constructor_t *c, uint32_t &stack_top) {
+    stack_top--;
     c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] += c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_sub(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_sub(const device_constructor_t *c, uint32_t &stack_top) {
+    stack_top--;
     c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] -= c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_mul(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_mul(const device_constructor_t *c, uint32_t &stack_top) {
+    stack_top--;
     c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] *= c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_div(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_div(const device_constructor_t *c, uint32_t &stack_top) {
+    stack_top--;
     c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] /= c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_mod(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_mod(const device_constructor_t *c, uint32_t &stack_top) {
+    stack_top--;
     c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x] %= c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 }
-__device__ __forceinline__ void __constructor_pow(const device_constructor_t *c, const uint32_t stack_top) {
+__device__ __forceinline__ void __constructor_pow(const device_constructor_t *c, uint32_t &stack_top) {
     int64_t res = 1;
+    stack_top--;
     int64_t a = c->stack[((stack_top - 1) << 10 | blockIdx.x) << 10 | threadIdx.x];
     int64_t e = c->stack[(stack_top << 10 | blockIdx.x) << 10 | threadIdx.x];
 
@@ -64,8 +74,8 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
     const int64_t relt_i = threadIdx.x;
     const int64_t relt_j = c->ids_j[blockIdx.x];
 
-    __shared__ float_t h[1024];
 
+    __shared__ float_t h[1024];
     int64_t val = 0;
 
     __syncthreads();
@@ -75,6 +85,7 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
         const uint8_t *ptr = b->d_pool + desc->instr_off;
 
         if (desc->ndim == 1 && real_i != real_j) continue;
+        if (desc->ndim == 1 && (real_i < desc->min_i || real_i >= desc->max_i)) continue;
         if (desc->ndim == 2 && (real_i < desc->min_i || real_i >= desc->max_i)) continue;
         if (desc->ndim == 2 && (real_j < desc->min_j || real_j >= desc->max_j)) continue;
         
@@ -113,18 +124,18 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
                     __constructor_set_value_qj(c, stack_top);           break;
                 default: break;
             }
-            if (code > NMl && code <= POW)      stack_top--;
-            if (code > POW && code <= SET_QJ)   stack_top++;
         }
 
         val += c->stack[blockIdx.x << 10 | threadIdx.x];
     }
 
-    if (relt_j != -1) h[threadIdx.x] = (float_t)val * (float_t)0.5;
-    else atomicAdd(&m->h[relt_i], (float_t)val);
+    if (threadIdx.x < m->n && relt_j == -1) atomicAdd(&m->h[relt_i], (float_t)val);
     __syncthreads();
 
-    if (relt_j != relt_i) atomicAdd(&m->J[relt_j * m->n + relt_i], h[threadIdx.x]);
+    if (relt_j == -1) return;
+    if (threadIdx.x < m->n && relt_j != relt_i) atomicAdd(&m->J[relt_j * m->n + relt_i], (float_t)val * 0.5f);
+
+    h[threadIdx.x] = (float_t)val * (threadIdx.x < m->n ? 0.5f : 0.0f);
 
     __syncthreads();
     for (unsigned stride = blockDim.x / 2; stride > 0; stride >>= 1) {
@@ -134,10 +145,4 @@ __global__  void __constructor_interpreter(const device_constructor_t *c, const 
 
     if (threadIdx.x == 0) atomicAdd(&m->h[relt_j], h[0] * 0.5);
 }
-
-// add(r1, a1, a2);
-// sub(r1, a1, a2);
-// mul(r1, a1, a2);
-// div(r1, a1, a2);
-// pow(r1, a1, a2);
 
